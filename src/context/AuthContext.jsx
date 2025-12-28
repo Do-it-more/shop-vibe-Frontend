@@ -15,11 +15,17 @@ export const AuthProvider = ({ children }) => {
             if (token) {
                 try {
                     const { data } = await api.get('/users/me');
-                    setUser(data);
+                    // Validate that data is an object and has an ID (prevents HTML/404 responses being treated as user)
+                    if (data && data._id && data.email) {
+                        setUser(data);
+                    } else {
+                        throw new Error("Invalid user data received");
+                    }
                 } catch (error) {
                     console.error("Auth check failed:", error);
                     localStorage.removeItem('token');
                     sessionStorage.removeItem('token');
+                    setUser(null);
                 }
             }
             setLoading(false);

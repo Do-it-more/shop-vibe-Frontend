@@ -16,8 +16,15 @@ const ProtectedRoute = ({ adminOnly = false }) => {
     }
 
     if (!user) {
-        // Redirect to login but save the attempted location
+        // Double check: If loading is done, user is null, AND no token in storage, redirect.
+        // If there IS a token but user is null, it means verification failed or is in progress (but loading should cover progress).
+        // Since loading is false here, we strictly redirect.
         return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    // Safety check: specific role check or validation
+    if (user && typeof user !== 'object') {
+        return <Navigate to="/login" replace />;
     }
 
     if (adminOnly && user.role !== 'admin') {
