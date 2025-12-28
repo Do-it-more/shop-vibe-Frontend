@@ -42,18 +42,21 @@ const Navbar = () => {
                     </Link>
 
                     {/* Desktop Search */}
-                    <form onSubmit={handleSearch} className="hidden md:flex flex-1 mx-12 max-w-lg relative group">
-                        <input
-                            type="text"
-                            value={keyword}
-                            onChange={(e) => setKeyword(e.target.value)}
-                            placeholder="Search for products..."
-                            className="w-full pl-12 pr-4 py-3 border border-gray-200 dark:border-slate-700 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 bg-gray-50 dark:bg-slate-800 dark:text-white transition-all shadow-sm group-hover:shadow-md"
-                        />
-                        <button type="submit" className="absolute left-4 top-3.5 text-gray-400 group-hover:text-indigo-600 transition-colors">
-                            <Search className="h-5 w-5" />
-                        </button>
-                    </form>
+                    {user && (
+                        <form onSubmit={handleSearch} className="hidden md:flex flex-1 mx-12 max-w-lg relative group">
+                            <input
+                                type="text"
+                                value={keyword}
+                                onChange={(e) => setKeyword(e.target.value)}
+                                placeholder="Search for products..."
+                                className="w-full pl-12 pr-4 py-3 border border-gray-200 dark:border-slate-700 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 bg-gray-50 dark:bg-slate-800 dark:text-white transition-all shadow-sm group-hover:shadow-md"
+                            />
+                            <button type="submit" className="absolute left-4 top-3.5 text-gray-400 group-hover:text-indigo-600 transition-colors">
+                                <Search className="h-5 w-5" />
+                            </button>
+                        </form>
+                    )}
+                    {!user && <div className="flex-1"></div>}
 
                     {/* Desktop Icons */}
                     <div className="hidden md:flex items-center space-x-6">
@@ -62,7 +65,25 @@ const Navbar = () => {
                         </button>
 
                         {user ? (
-                            <ProfileDropdown />
+                            <>
+                                <ProfileDropdown />
+                                <Link to="/wishlist" className="text-gray-600 dark:text-gray-300 hover:text-red-500 relative transition-colors group">
+                                    <div className="p-2 rounded-full bg-gray-50 dark:bg-slate-800 group-hover:bg-red-50 dark:group-hover:bg-slate-700 transition-colors">
+                                        <Heart className={`h-6 w-6 ${wishlist?.length > 0 ? 'fill-red-500 text-red-500' : ''}`} />
+                                    </div>
+                                </Link>
+
+                                <Link to="/cart" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 relative transition-colors group">
+                                    <div className="p-2 rounded-full bg-gray-50 dark:bg-slate-800 group-hover:bg-indigo-50 dark:group-hover:bg-slate-700 transition-colors">
+                                        <ShoppingCart className="h-6 w-6" />
+                                    </div>
+                                    {cartCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm">
+                                            {cartCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            </>
                         ) : (
                             <Link to="/login" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-2 font-medium transition-colors group">
                                 <div className="p-2 rounded-full bg-gray-50 dark:bg-slate-800 group-hover:bg-indigo-50 dark:group-hover:bg-slate-700 transition-colors">
@@ -71,23 +92,6 @@ const Navbar = () => {
                                 <span className="hidden lg:block">Login</span>
                             </Link>
                         )}
-
-                        <Link to="/wishlist" className="text-gray-600 dark:text-gray-300 hover:text-red-500 relative transition-colors group">
-                            <div className="p-2 rounded-full bg-gray-50 dark:bg-slate-800 group-hover:bg-red-50 dark:group-hover:bg-slate-700 transition-colors">
-                                <Heart className={`h-6 w-6 ${wishlist?.length > 0 ? 'fill-red-500 text-red-500' : ''}`} />
-                            </div>
-                        </Link>
-
-                        <Link to="/cart" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 relative transition-colors group">
-                            <div className="p-2 rounded-full bg-gray-50 dark:bg-slate-800 group-hover:bg-indigo-50 dark:group-hover:bg-slate-700 transition-colors">
-                                <ShoppingCart className="h-6 w-6" />
-                            </div>
-                            {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </Link>
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -95,14 +99,16 @@ const Navbar = () => {
                         <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-gray-300">
                             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                         </button>
-                        <Link to="/cart" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 relative transition-colors">
-                            <ShoppingCart className="h-6 w-6" />
-                            {cartCount > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white dark:border-slate-900">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </Link>
+                        {user && (
+                            <Link to="/cart" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 relative transition-colors">
+                                <ShoppingCart className="h-6 w-6" />
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white dark:border-slate-900">
+                                        {cartCount}
+                                    </span>
+                                )}
+                            </Link>
+                        )}
                         <button onClick={() => setIsOpen(!isOpen)} className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 focus:outline-none p-2 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                         </button>

@@ -1,20 +1,39 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Star, Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 const ProductCard = ({ product }) => {
     const id = product.id || product._id;
     const { toggleWishlist, isInWishlist } = useWishlist();
     const { user } = useAuth();
+    const { addToCart } = useCart();
     const isWishlisted = isInWishlist(id);
+    const [adding, setAdding] = React.useState(false);
+    const navigate = useNavigate();
+
+    const handleAddToCart = async (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // Prevent link click
+
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+
+        setAdding(true);
+        await addToCart(product, 1);
+        setAdding(false);
+    };
 
     const handleWishlistClick = (e) => {
         e.preventDefault();
         if (!user) {
-            alert("Please login to use wishlist");
+            // alert("Please login to use wishlist"); 
+            navigate('/login'); // Better UX per requirements
             return;
         }
         toggleWishlist(id);
@@ -47,9 +66,19 @@ const ProductCard = ({ product }) => {
                 )}
                 {/* Quick add overlay */}
                 <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/50 to-transparent">
-                    <button className="w-full py-3 bg-white text-slate-900 font-semibold rounded-xl hover:bg-indigo-600 hover:text-white transition-colors shadow-lg flex items-center justify-center gap-2">
-                        <ShoppingCart className="h-4 w-4" />
-                        Add to Cart
+                    <button
+                        onClick={handleAddToCart}
+                        disabled={adding}
+                        className="w-full py-3 bg-white text-slate-900 font-semibold rounded-xl hover:bg-indigo-600 hover:text-white transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
+                    >
+                        {adding ? (
+                            <span className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></span>
+                        ) : (
+                            <>
+                                <ShoppingCart className="h-4 w-4" />
+                                Add to Cart
+                            </>
+                        )}
                     </button>
                 </div>
             </Link>

@@ -4,9 +4,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 import { Loader, Lock, CreditCard, QrCode, Smartphone } from 'lucide-react';
 
+import { useToast } from '../context/ToastContext';
+
 const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplaySuccess }) => {
     const stripe = useStripe();
     const elements = useElements();
+    const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('card'); // 'card' or 'upi'
@@ -64,7 +67,6 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
             });
 
             if (result.error) {
-                setError(result.error.message);
                 throw new Error(result.error.message);
             }
 
@@ -74,7 +76,9 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
 
         } catch (err) {
             console.error("Payment failed", err);
-            if (!error) setError(err.response?.data?.message || err.message || "Payment failed");
+            const msg = err.response?.data?.message || err.message || "Payment failed";
+            setError(msg);
+            showToast(msg, "error");
         } finally {
             setLoading(false);
         }
@@ -100,7 +104,9 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
 
         } catch (err) {
             console.error("UPI Payment failed", err);
-            setError(err.response?.data?.message || err.message || "UPI Payment verification failed");
+            const msg = err.response?.data?.message || err.message || "UPI Payment verification failed";
+            setError(msg);
+            showToast(msg, "error");
         } finally {
             setLoading(false);
         }
@@ -115,8 +121,15 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
             payer: { email_address: user.email }
         };
         await api.put(`/orders/${orderId}/pay`, paymentResult);
+        showToast("Payment successful! Order placed.", "success");
         clearCart();
-        onDisplaySuccess();
+
+        // Delay callback slightly to let toast be seen if needed, 
+        // though toast persists across re-renders if context is high enough.
+        // onDisplaySuccess switches the view.
+        setTimeout(() => {
+            onDisplaySuccess();
+        }, 1000);
     };
 
     const validateShipping = () => {

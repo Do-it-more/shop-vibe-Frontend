@@ -37,7 +37,20 @@ const Cart = () => {
                         <div className="lg:col-span-2 space-y-4">
                             <AnimatePresence>
                                 {cart.map((item) => {
-                                    const id = item._id || item.id;
+                                    // The ID structure depends on populate. If items is [{product: 'id', ...}], then product is the ID.
+                                    // If backend returns populated { product: { _id: ... } }, then product._id is ID.
+                                    // In my cart controller, I am pushing productId string/ObjectId to `product` field.
+                                    // BUT getCart does NO populate in controller!
+                                    // So `item.product` IS the ID.
+                                    // Wait, in `addToCart`, I push { product: productId, ... }.
+                                    // So `item.product` is the ID.
+                                    // BUT `Cart.jsx` uses `item._id` or `item.id`.
+                                    // `item._id` is the subdocument ID of the item in the array.
+                                    // The `updateQuantity` likely expects `productId` (the product's ID), NOT the cart item's ID.
+                                    // Checking controller: `const itemIndex = cart.items.findIndex(p => p.product.toString() === productId);`
+                                    // It expects PRODUCT ID.
+                                    // So I must pass `item.product`.
+                                    const id = item.product._id || item.product;
                                     return (
                                         <motion.div
                                             key={id}

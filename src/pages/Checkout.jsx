@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
+import confetti from 'canvas-confetti';
 
 // Replace with your Stripe Publishable Key
 const stripePromise = loadStripe('pk_test_TYooMQauvdEDq54NiTphI7jx');
@@ -31,6 +32,17 @@ const Checkout = () => {
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
+
+    React.useEffect(() => {
+        if (isOrderPlaced) {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#4f46e5', '#818cf8', '#c7d2fe'] // Indigo shades
+            });
+        }
+    }, [isOrderPlaced]);
 
     if (isOrderPlaced) {
         return (

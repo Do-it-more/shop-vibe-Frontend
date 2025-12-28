@@ -27,9 +27,8 @@ const Home = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const { data } = await api.get('/products');
-                // Use first 8 items as featured for now
-                setProducts(data.slice(0, 8));
+                const { data } = await api.get('/products/top');
+                setProducts(data);
             } catch (error) {
                 console.error("Failed to fetch featured products", error);
             }
