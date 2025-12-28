@@ -24,7 +24,8 @@ const UserListScreen = () => {
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-slate-800 dark:text-white">User Management</h1>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+            {/* Desktop View */}
+            <div className="hidden md:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
@@ -70,6 +71,40 @@ const UserListScreen = () => {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4">
+                {users.map((user) => (
+                    <div key={user._id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-700 dark:text-indigo-400 font-bold text-lg">
+                                {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    {user.name}
+                                    {user.role === 'admin' && (
+                                        <span className="text-[10px] text-purple-600 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded-full border border-purple-100 dark:border-purple-800">
+                                            Admin
+                                        </span>
+                                    )}
+                                </h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                            </div>
+                        </div>
+
+                        {user.role !== 'admin' && (
+                            <button
+                                onClick={() => deleteHandler(user._id)}
+                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                aria-label="Delete user"
+                            >
+                                <Trash2 className="h-5 w-5" />
+                            </button>
+                        )}
+                    </div>
+                ))}
             </div>
         </div>
     );

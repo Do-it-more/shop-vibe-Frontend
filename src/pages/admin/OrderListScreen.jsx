@@ -36,7 +36,8 @@ const OrderListScreen = () => {
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Order Management</h1>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+            {/* Desktop View */}
+            <div className="hidden md:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
@@ -90,6 +91,57 @@ const OrderListScreen = () => {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4">
+                {orders.map((order) => (
+                    <div key={order._id} className="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="font-mono text-sm font-bold text-slate-800 dark:text-white">#{order._id.substring(0, 8)}</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{order.createdAt.substring(0, 10)}</p>
+                            </div>
+                            <span className="font-bold text-lg text-indigo-600 dark:text-indigo-400">₹{order.totalPrice.toFixed(2)}</span>
+                        </div>
+
+                        <div className="mb-4 text-sm text-gray-600 dark:text-gray-300">
+                            <p><span className="font-semibold">User:</span> {order.user?.name}</p>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 mb-4">
+                            {order.isPaid ? (
+                                <span className="flex items-center gap-1 text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-3 py-1 rounded-full text-xs font-bold">
+                                    <CheckCircle className="h-3 w-3" /> Paid
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-1 text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-3 py-1 rounded-full text-xs font-bold">
+                                    <Clock className="h-3 w-3" /> Pending
+                                </span>
+                            )}
+
+                            {order.isDelivered ? (
+                                <span className="text-green-600 dark:text-green-400 font-bold text-xs bg-green-50 dark:bg-green-900/10 px-2 py-1 rounded">Delivered</span>
+                            ) : (
+                                <span className="text-yellow-600 dark:text-yellow-400 font-bold text-xs bg-yellow-50 dark:bg-yellow-900/10 px-2 py-1 rounded">Processing</span>
+                            )}
+                        </div>
+
+                        <div className="flex gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+                            <Link to={`/order/${order._id}`} className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-white font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+                                <Eye className="h-4 w-4" /> View
+                            </Link>
+                            {!order.isDelivered && (
+                                <button
+                                    onClick={() => markAsDelivered(order._id)}
+                                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                                >
+                                    <Truck className="h-4 w-4" /> Deliver
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

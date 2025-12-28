@@ -54,7 +54,8 @@ const ProductListScreen = () => {
                 </Link>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+            {/* Desktop View */}
+            <div className="hidden md:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
@@ -83,8 +84,8 @@ const ProductListScreen = () => {
                                     <td className="p-4 font-medium text-slate-900 dark:text-white">₹{product.price}</td>
                                     <td className="p-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${product.countInStock > 0
-                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                             }`}>
                                             {product.countInStock > 0 ? `${product.countInStock} in stock` : 'Out of Stock'}
                                         </span>
@@ -110,6 +111,48 @@ const ProductListScreen = () => {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden grid grid-cols-1 gap-4">
+                {products.map((product) => (
+                    <div key={product._id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 flex gap-4">
+                        <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-20 h-20 rounded-lg object-cover bg-gray-100 flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-slate-900 dark:text-white mb-1 truncate">{product.name}</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 capitalize">{product.category}</p>
+
+                            <div className="flex items-center justify-between mt-2">
+                                <span className="font-bold text-indigo-600 dark:text-indigo-400">₹{product.price}</span>
+                                <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${product.countInStock > 0
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                    }`}>
+                                    {product.countInStock > 0 ? `${product.countInStock} Stock` : 'No Stock'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col justify-between items-end pl-2 border-l border-gray-100 dark:border-slate-700 ml-2">
+                            <Link
+                                to={`/admin/products/${product._id}/edit`}
+                                className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                            >
+                                <Edit className="h-4 w-4" />
+                            </Link>
+                            <button
+                                onClick={() => deleteHandler(product._id)}
+                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

@@ -52,6 +52,7 @@ const AdminLayout = () => {
                             <Link
                                 key={item.path}
                                 to={item.path}
+                                onClick={() => setIsSidebarOpen(false)}
                                 className={`
                                     flex items-center gap-3 px-4 py-3 rounded-xl transition-colors
                                     ${isActive

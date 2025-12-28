@@ -109,6 +109,7 @@ const Navbar = () => {
                                 )}
                             </Link>
                         )}
+                        {user && <ProfileDropdown />}
                         <button onClick={() => setIsOpen(!isOpen)} className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 focus:outline-none p-2 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                         </button>
