@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import api from '../services/api';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { Star, ShoppingCart, Minus, Plus, Heart, Truck, ShieldCheck, ArrowLeft, Loader } from 'lucide-react';
 
 const ProductDetail = () => {
     const { id } = useParams();
     const { addToCart } = useCart();
+    const { user } = useAuth();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [product, setProduct] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
@@ -119,13 +123,28 @@ const ProductDetail = () => {
                             </div>
 
                             <div className="flex gap-4">
-                                <button
-                                    onClick={() => addToCart(product, quantity)}
-                                    className="flex-1 bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-full font-bold text-lg hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
-                                >
-                                    <ShoppingCart className="h-5 w-5" />
-                                    Add to Cart
-                                </button>
+                                {user ? (
+                                    <button
+                                        onClick={() => addToCart(product, quantity)}
+                                        className="flex-1 bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-full font-bold text-lg hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        <ShoppingCart className="h-5 w-5" />
+                                        Add to Cart
+                                    </button>
+                                ) : (
+                                    <Link
+                                        to="/login"
+                                        state={{ from: location }}
+                                        className="flex-1 bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 py-4 rounded-full font-bold text-lg cursor-not-allowed flex items-center justify-center gap-2"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            navigate('/login', { state: { from: location } });
+                                        }}
+                                    >
+                                        <ShoppingCart className="h-5 w-5" />
+                                        Login to Add
+                                    </Link>
+                                )}
                                 <button className="w-14 h-14 rounded-full border border-gray-200 dark:border-slate-600 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-100 dark:hover:border-red-900 transition-all">
                                     <Heart className="h-6 w-6" />
                                 </button>

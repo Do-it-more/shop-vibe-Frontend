@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, LogOut, Camera, X, Loader, Save, Package } from 'lucide-react';
+import { User, LogOut, Camera, X, Loader, Save, Package, LayoutDashboard } from 'lucide-react';
 import api from '../services/api';
 
 const ProfileDropdown = () => {
@@ -167,6 +167,17 @@ const ProfileDropdown = () => {
                                 <Package className="h-4 w-4 text-gray-400 dark:text-gray-500" />
                                 My Orders / Track
                             </Link>
+
+                            {user.role === 'admin' && (
+                                <Link
+                                    to="/admin/dashboard"
+                                    onClick={() => setIsOpen(false)}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+                                >
+                                    <LayoutDashboard className="h-4 w-4" />
+                                    Admin Dashboard
+                                </Link>
+                            )}
                             <button
                                 onClick={() => { setIsEditing(true); setNewName(user.name); }}
                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"

@@ -43,8 +43,13 @@ const Login = () => {
                 className="bg-white dark:bg-slate-800 p-8 md:p-10 rounded-3xl shadow-xl w-full max-w-md relative z-10 border border-gray-100 dark:border-slate-700"
             >
                 <div className="text-center mb-10">
-                    <Link to="/" className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2 block">
-                        ShopVibe
+                    <Link to="/" className="inline-flex flex-col items-center justify-center mb-6 group">
+                        <span className="font-serif text-3xl md:text-4xl tracking-[0.15em] font-bold text-slate-900 dark:text-white leading-none" style={{ fontFamily: '"Playfair Display", serif' }}>
+                            BERLINA
+                        </span>
+                        <span className="text-xs md:text-sm tracking-[0.4em] font-light lowercase text-gray-500 dark:text-gray-400 mt-2">
+                            fashion design
+                        </span>
                     </Link>
                     <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome Back</h2>
                     <p className="text-gray-500 dark:text-gray-400">Please enter your details to sign in</p>

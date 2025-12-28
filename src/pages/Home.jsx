@@ -8,7 +8,7 @@ import { Truck, RotateCcw, ShieldCheck, Award, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const categories = [
-    { name: 'Smartphones', image: 'https://images.unsplash.com/photo-1598327771808-1f112a27612d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', count: '120+' },
+    { name: 'Smartphones', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', count: '120+' },
     { name: 'Laptops', image: 'https://images.unsplash.com/photo-1493119508027-2b584f234d6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', count: '85+' },
     { name: 'Headphones', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', count: '200+' },
     { name: 'Smartwatch', image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', count: '60+' },
@@ -104,7 +104,7 @@ const Home = () => {
                             <p className="text-gray-500 dark:text-gray-400">Hand-picked products just for you. Get the best quality at the best price.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
                             {products.length > 0 ? products.map((product) => (
                                 <ProductCard key={product._id} product={product} />
                             )) : (

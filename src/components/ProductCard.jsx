@@ -54,21 +54,21 @@ const ProductCard = ({ product }) => {
                 </div>
             </Link>
 
-            <div className="p-5">
+            <div className="p-3 sm:p-5">
                 <div className="flex items-center space-x-1 mb-2">
-                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">{product.rating}</span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">({product.numReviews || product.reviews})</span>
+                    <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400 fill-current" />
+                    <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">{product.rating}</span>
+                    <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">({product.numReviews || product.reviews})</span>
                 </div>
                 <Link to={`/product/${id}`}>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-1 truncate hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{product.name}</h3>
+                    <h3 className="text-sm sm:text-lg font-bold text-slate-800 dark:text-slate-100 mb-1 truncate hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{product.name}</h3>
                 </Link>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 capitalize">{product.category}</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 capitalize">{product.category}</p>
 
                 <div className="flex items-end justify-between">
                     <div className="flex flex-col">
-                        {product.oldPrice && <span className="text-sm text-gray-400 line-through">₹{product.oldPrice}</span>}
-                        <span className="text-xl font-bold text-slate-900 dark:text-white">₹{product.price}</span>
+                        {product.oldPrice && <span className="text-xs sm:text-sm text-gray-400 line-through">₹{product.oldPrice}</span>}
+                        <span className="text-base sm:text-xl font-bold text-slate-900 dark:text-white">₹{product.price}</span>
                     </div>
                 </div>
             </div>
