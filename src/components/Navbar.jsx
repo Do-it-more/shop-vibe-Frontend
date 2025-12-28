@@ -27,10 +27,18 @@ const Navbar = () => {
         }
     };
 
+    const getProfileImg = (photo) => {
+        if (!photo) return null;
+        if (photo.startsWith('http')) return photo;
+        const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5001').replace(/\/api\/?$/, '');
+        return `${baseUrl}${photo}`;
+    };
+
     return (
         <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm sticky top-0 z-50 transition-all duration-300 border-b border-transparent dark:border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
+
                     {/* Logo */}
                     <Link to="/" className="group flex flex-col items-center justify-center">
                         <span className="font-serif text-2xl md:text-3xl tracking-[0.15em] font-bold text-slate-900 dark:text-white leading-none group-hover:opacity-80 transition-opacity" style={{ fontFamily: '"Playfair Display", serif' }}>
@@ -141,7 +149,7 @@ const Navbar = () => {
                                     <>
                                         <div className="flex items-center gap-3 p-2 bg-indigo-50 dark:bg-slate-800 rounded-lg">
                                             {user.profilePhoto ? (
-                                                <img src={`http://localhost:5001${user.profilePhoto}`} className="w-10 h-10 rounded-full object-cover" alt={user.name} />
+                                                <img src={getProfileImg(user.profilePhoto)} className="w-10 h-10 rounded-full object-cover" alt={user.name} />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-bold">
                                                     {user.name.charAt(0).toUpperCase()}

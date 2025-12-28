@@ -35,6 +35,7 @@ const Checkout = () => {
 
     React.useEffect(() => {
         if (isOrderPlaced) {
+            window.scrollTo(0, 0);
             confetti({
                 particleCount: 150,
                 spread: 70,

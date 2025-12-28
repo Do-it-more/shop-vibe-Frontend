@@ -76,7 +76,9 @@ const ProfileDropdown = () => {
     const getProfileImg = () => {
         if (!user.profilePhoto) return null;
         if (user.profilePhoto.startsWith('http')) return user.profilePhoto;
-        return `http://localhost:5001${user.profilePhoto}`;
+        // Strip '/api' from the end of VITE_API_URL to get the base server URL
+        const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5001').replace(/\/api\/?$/, '');
+        return `${baseUrl}${user.profilePhoto}`;
     };
 
     return (
