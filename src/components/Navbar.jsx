@@ -42,7 +42,7 @@ const Navbar = () => {
                     {/* Logo */}
                     <Link to="/" className="group flex flex-col items-center justify-center">
                         <span className="font-serif text-2xl md:text-3xl tracking-[0.15em] font-bold text-slate-900 dark:text-white leading-none group-hover:opacity-80 transition-opacity" style={{ fontFamily: '"Playfair Display", serif' }}>
-                            BERLINA
+                            BARLINA
                         </span>
                         <span className="text-[10px] md:text-xs tracking-[0.4em] font-light lowercase text-gray-500 dark:text-gray-400 mt-1">
                             fashion design

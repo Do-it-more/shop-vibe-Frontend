@@ -11,7 +11,7 @@ import {
     LineChart,
     Line
 } from 'recharts';
-import { DollarSign, ShoppingBag, Users, Package, TrendingUp } from 'lucide-react';
+import { IndianRupee, ShoppingBag, Users, Package, TrendingUp, Download } from 'lucide-react';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
@@ -35,15 +35,54 @@ const AdminDashboard = () => {
     if (!stats) return <div className="text-center py-20 text-red-500">Failed to load stats.</div>;
 
     const cards = [
-        { title: 'Total Revenue', value: `₹${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, color: 'bg-green-500' },
-        { title: 'Total Orders', value: stats.orderCount, icon: ShoppingBag, color: 'bg-blue-500' },
-        { title: 'Total Users', value: stats.userCount, icon: Users, color: 'bg-purple-500' },
-        { title: 'Products', value: stats.productCount, icon: Package, color: 'bg-orange-500' },
+        { title: 'Total Revenue', value: `₹${stats.totalRevenue.toFixed(2)}`, icon: IndianRupee, color: 'green' },
+        { title: 'Total Orders', value: stats.orderCount, icon: ShoppingBag, color: 'blue' },
+        { title: 'Total Users', value: stats.userCount, icon: Users, color: 'purple' },
+        { title: 'Products', value: stats.productCount, icon: Package, color: 'orange' },
     ];
+
+    const handleDownload = async (type) => {
+        try {
+            const endpoint = `/reports/${type}/download`;
+            const response = await api.get(endpoint, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${type}_report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error(`Failed to download ${type} report`, error);
+            alert("Failed to download report. Please try again.");
+        }
+    };
 
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Dashboard Overview</h1>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Dashboard Overview</h1>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => handleDownload('sales')}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm"
+                    >
+                        <Download className="h-4 w-4" /> Sales Report
+                    </button>
+                    <button
+                        onClick={() => handleDownload('orders')}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm"
+                    >
+                        <Download className="h-4 w-4" /> Order Report
+                    </button>
+                    <button
+                        onClick={() => handleDownload('complaints')}
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm"
+                    >
+                        <Download className="h-4 w-4" /> Complaint Report
+                    </button>
+                </div>
+            </div>
 
             {/* Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -53,7 +92,7 @@ const AdminDashboard = () => {
                             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">{card.title}</p>
                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{card.value}</h3>
                         </div>
-                        <div className={`p-4 rounded-xl ${card.color} bg-opacity-10 text-${card.color.split('-')[1]}-600`}>
+                        <div className={`p-4 rounded-xl bg-${card.color}-500/10 text-${card.color}-600 dark:text-${card.color}-400`}>
                             <card.icon className="h-6 w-6" />
                         </div>
                     </div>

@@ -169,13 +169,13 @@ const ProfileDropdown = () => {
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="mt-3 group cursor-pointer" onClick={() => { setIsEditing(true); setNewName(user.name); }}>
+                                    <Link to="/profile" className="mt-3 block group cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 p-2 rounded-lg transition-colors" onClick={() => setIsOpen(false)}>
                                         <h3 className="font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2">
                                             {user.name}
-                                            {/* <Edit2 className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" /> */}
                                         </h3>
                                         <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
-                                    </div>
+                                        <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2 font-medium">View Profile & Complaints</p>
+                                    </Link>
                                 )}
                             </div>
 

@@ -39,6 +39,14 @@ const ProductCard = ({ product }) => {
         toggleWishlist(id);
     };
 
+    const getImageUrl = (path) => {
+        if (!path) return 'https://via.placeholder.com/300';
+        if (path.startsWith('http')) return path;
+        // Prepend backend URL for relative paths
+        const baseUrl = 'http://localhost:5001';
+        return `${baseUrl}${path}`;
+    };
+
     return (
         <motion.div
             whileHover={{ y: -8 }}
@@ -46,7 +54,7 @@ const ProductCard = ({ product }) => {
         >
             <Link to={`/product/${id}`} className="block relative aspect-[3/4] overflow-hidden bg-gray-50 dark:bg-slate-700">
                 <img
-                    src={product.image}
+                    src={getImageUrl(product.image)}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />

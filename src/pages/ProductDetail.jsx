@@ -17,6 +17,31 @@ const ProductDetail = () => {
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [rating, setRating] = useState(0);
+    const [comment, setComment] = useState('');
+    const [relatedProducts, setRelatedProducts] = useState([]);
+
+    const submitHandler = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post(`/products/${id}/reviews`, { rating, comment });
+            alert('Review Submitted!');
+            setComment('');
+            setRating(0);
+            // Reload product to show new review
+            const { data } = await api.get(`/products/${id}`);
+            setProduct(data);
+        } catch (error) {
+            alert(error.response?.data?.message || 'Error submitting review');
+        }
+    };
+
+    const getImageUrl = (path) => {
+        if (!path) return 'https://via.placeholder.com/300';
+        if (path.startsWith('http')) return path;
+        const baseUrl = 'http://localhost:5001';
+        return `${baseUrl}${path}`;
+    };
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -24,6 +49,13 @@ const ProductDetail = () => {
                 // Try to fetch by ID
                 const { data } = await api.get(`/products/${id}`);
                 setProduct(data);
+
+                // Fetch related
+                if (data.category) {
+                    const relatedRes = await api.get(`/products?category=${data.category}`);
+                    // Filter out current product and limit to 4
+                    setRelatedProducts(relatedRes.data.filter(p => p._id !== id).slice(0, 4));
+                }
             } catch (error) {
                 console.error("Failed to fetch product", error);
             } finally {
@@ -53,7 +85,7 @@ const ProductDetail = () => {
                     <div className="space-y-4">
                         <div className="aspect-square bg-gray-50 dark:bg-slate-800 rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-700 relative group">
                             <img
-                                src={images[activeImage]}
+                                src={getImageUrl(images[activeImage])}
                                 alt={product.name}
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
@@ -70,7 +102,7 @@ const ProductDetail = () => {
                                     onClick={() => setActiveImage(idx)}
                                     className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-indigo-600 ring-2 ring-indigo-100 dark:ring-indigo-900' : 'border-gray-100 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'}`}
                                 >
-                                    <img src={img} alt="" className="w-full h-full object-cover" />
+                                    <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
                                 </button>
                             ))}
                         </div>
@@ -169,8 +201,114 @@ const ProductDetail = () => {
                     </div>
                 </div>
             </main>
+
+            {/* Reviews Section */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-gray-100 dark:border-slate-800">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Customer Reviews ({product.numReviews})</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    {/* Review List */}
+                    <div className="space-y-6">
+                        {product.reviews.length === 0 && <div className="text-gray-500">No reviews yet. Be the first to review!</div>}
+                        {product.reviews.map((review) => (
+                            <div key={review._id} className="bg-gray-50 dark:bg-slate-800 p-6 rounded-2xl">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-sm">
+                                            {review.name.charAt(0)}
+                                        </div>
+                                        <span className="font-bold text-slate-900 dark:text-white">{review.name}</span>
+                                    </div>
+                                    <div className="flex text-yellow-400">
+                                        {[...Array(5)].map((_, r) => (
+                                            <Star key={r} className={`h-4 w-4 ${r < review.rating ? 'fill-current' : 'text-gray-200 dark:text-slate-600'}`} />
+                                        ))}
+                                    </div>
+                                </div>
+                                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{review.comment}</p>
+                                <p className="text-xs text-gray-400 mt-3">{review.createdAt?.substring(0, 10)}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Review Form */}
+                    <div>
+                        <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Write a Customer Review</h3>
+                            {user ? (
+                                <form onSubmit={submitHandler} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rating</label>
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                <button
+                                                    key={s}
+                                                    type="button"
+                                                    onClick={() => setRating(s)}
+                                                    className={`p-1 transition-transform hover:scale-110 ${s <= rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
+                                                >
+                                                    <Star className={`h-8 w-8 ${s <= rating ? 'fill-current' : ''}`} />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Comment</label>
+                                        <textarea
+                                            rows="4"
+                                            value={comment}
+                                            onChange={(e) => setComment(e.target.value)}
+                                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="Share your thoughts about the product..."
+                                        ></textarea>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={rating === 0 || !comment}
+                                        className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Submit Review
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <p className="text-gray-600 dark:text-gray-400 mb-4">Please sign in to write a review</p>
+                                    <Link to="/login" className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                                        Sign In
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+
+            {/* Related Products */}
+            {
+                relatedProducts.length > 0 && (
+                    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">You May Also Like</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {relatedProducts.map((p) => (
+                                <Link key={p._id} to={`/product/${p._id}`} className="group bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                                    <div className="aspect-[4/3] overflow-hidden bg-gray-100 relative">
+                                        <img src={getImageUrl(p.image)} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                    </div>
+                                    <div className="p-4">
+                                        <h3 className="font-bold text-slate-900 dark:text-white truncate mb-1">{p.name}</h3>
+                                        <p className="text-indigo-600 dark:text-indigo-400 font-bold">₹{p.price}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                )
+            }
+
             <Footer />
-        </div>
+        </div >
     );
 };
 

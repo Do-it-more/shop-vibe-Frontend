@@ -16,6 +16,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import OrderList from './pages/OrderList';
 import OrderDetail from './pages/OrderDetail';
+import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import About from './pages/About';
 import AdminLayout from './pages/admin/AdminLayout';
@@ -24,8 +25,13 @@ import ProductListScreen from './pages/admin/ProductListScreen';
 import ProductEditScreen from './pages/admin/ProductEditScreen';
 import OrderListScreen from './pages/admin/OrderListScreen';
 import UserListScreen from './pages/admin/UserListScreen';
+import AdminCreateScreen from './pages/admin/AdminCreateScreen';
 import CategoryListScreen from './pages/admin/CategoryListScreen';
 import CategoryEditScreen from './pages/admin/CategoryEditScreen';
+import ComplaintListScreen from './pages/admin/ComplaintListScreen';
+import ComplaintDetailScreen from './pages/admin/ComplaintDetailScreen';
+import CouponListScreen from './pages/admin/CouponListScreen';
+import ChatBot from './components/ChatBot';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -35,6 +41,15 @@ function ScrollToTop() {
   }, [pathname]);
 
   return null;
+}
+
+function ConditionalChatBot() {
+  const location = useLocation();
+  // Hide ChatBot on admin pages
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
+  return <ChatBot />;
 }
 
 function App() {
@@ -62,6 +77,7 @@ function App() {
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/orders" element={<OrderList />} />
                     <Route path="/order/:id" element={<OrderDetail />} />
+                    <Route path="/profile" element={<Profile />} />
                   </Route>
                   {/* Admin Routes */}
                   <Route element={<ProtectedRoute adminOnly={true} />}>
@@ -73,12 +89,17 @@ function App() {
                       <Route path="products/:id/edit" element={<ProductEditScreen />} />
                       <Route path="orders" element={<OrderListScreen />} />
                       <Route path="users" element={<UserListScreen />} />
+                      <Route path="users/create" element={<AdminCreateScreen />} />
                       <Route path="categories" element={<CategoryListScreen />} />
                       <Route path="categories/create" element={<CategoryEditScreen />} />
                       <Route path="categories/:id/edit" element={<CategoryEditScreen />} />
+                      <Route path="complaints" element={<ComplaintListScreen />} />
+                      <Route path="complaints/:id" element={<ComplaintDetailScreen />} />
+                      <Route path="coupons" element={<CouponListScreen />} />
                     </Route>
                   </Route>
                 </Routes>
+                <ConditionalChatBot />
               </Router>
             </WishlistProvider>
           </CartProvider>

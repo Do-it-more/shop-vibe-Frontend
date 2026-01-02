@@ -12,7 +12,7 @@ const Footer = () => {
                         <Link to="/" className="inline-block mb-6 group">
                             <div className="flex flex-col items-start">
                                 <span className="font-serif text-2xl md:text-3xl tracking-[0.15em] font-bold text-slate-900 dark:text-white leading-none group-hover:opacity-80 transition-opacity" style={{ fontFamily: '"Playfair Display", serif' }}>
-                                    BERLINA
+                                    BARLINA
                                 </span>
                                 <span className="text-[10px] md:text-xs tracking-[0.4em] font-light lowercase text-gray-500 dark:text-gray-400 mt-1 w-full text-center">
                                     fashion design
@@ -84,7 +84,7 @@ const Footer = () => {
                             </li>
                             <li className="flex items-center gap-4 text-gray-500 dark:text-gray-400">
                                 <Mail className="h-5 w-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                                <span>support@berlinafashion.com</span>
+                                <span>support@barlinafashion.com</span>
                             </li>
                         </ul>
                     </div>
@@ -92,7 +92,7 @@ const Footer = () => {
 
                 <div className="border-t border-gray-100 dark:border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
-                        © {new Date().getFullYear()} Berlina Fashion Design. All rights reserved.
+                        © {new Date().getFullYear()} Barlina Fashion Design. All rights reserved.
                     </p>
                     <div className="flex items-center gap-6">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all dark:invert" />

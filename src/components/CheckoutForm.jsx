@@ -5,6 +5,7 @@ import api from '../services/api';
 import { Loader, Lock, CreditCard, QrCode, Smartphone } from 'lucide-react';
 
 import { useToast } from '../context/ToastContext';
+import { playSuccessSound, initializeAudio } from '../utils/audio';
 
 const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplaySuccess }) => {
     const stripe = useStripe();
@@ -26,10 +27,10 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
             })),
             shippingAddress,
             paymentMethod: payMethod,
-            itemsPrice: total,
-            taxPrice: total * 0.1,
-            shippingPrice: total > 50 ? 0 : 10,
-            totalPrice: total + (total * 0.1) + (total > 50 ? 0 : 10)
+            itemsPrice: total, // simplified
+            taxPrice: 0,
+            shippingPrice: 0,
+            totalPrice: total
         };
         const { data } = await api.post('/orders', orderData);
         return data; // createdOrder
@@ -37,6 +38,7 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
 
     const handleCardPayment = async (e) => {
         e.preventDefault();
+        initializeAudio(); // Prepare audio context for mobile
         if (!stripe || !elements) return;
         if (!validateShipping()) return;
 
@@ -86,6 +88,7 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
 
     const handleUPIPayment = async (e) => {
         e.preventDefault();
+        initializeAudio(); // Prepare audio context for mobile
         if (!validateShipping()) return;
 
         setLoading(true);
@@ -121,6 +124,11 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
             payer: { email_address: user.email }
         };
         await api.put(`/orders/${orderId}/pay`, paymentResult);
+        // Delay success sound 3 seconds
+        setTimeout(() => {
+            playSuccessSound();
+        }, 3000);
+
         showToast("Payment successful! Order placed.", "success");
         clearCart();
 
@@ -133,7 +141,7 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
     };
 
     const validateShipping = () => {
-        if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.postalCode || !shippingAddress.country) {
+        if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.postalCode || !shippingAddress.country || !shippingAddress.phoneNumber) {
             setError("Please fill in all shipping fields");
             return false;
         }
@@ -155,7 +163,7 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
 
     // Generate a Dummy UPI string for QR Code
     // format: upi://pay?pa=<vpa>&pn=<name>&am=<amount>&cu=<currency>
-    const finalTotal = (total + (total * 0.1) + (total > 50 ? 0 : 10)).toFixed(2);
+    const finalTotal = Number(total).toFixed(2);
     const upiString = `upi://pay?pa=shopvibe@upi&pn=ShopVibe&am=${finalTotal}&cu=INR`;
 
     return (

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useCart } from '../context/CartContext';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -9,6 +10,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import confetti from 'canvas-confetti';
+import api from '../services/api';
+import { Tag, X } from 'lucide-react';
 
 // Replace with your Stripe Publishable Key
 const stripePromise = loadStripe('pk_test_TYooMQauvdEDq54NiTphI7jx');
@@ -22,12 +25,33 @@ const Checkout = () => {
         city: '',
         postalCode: '',
         country: '',
+        phoneNumber: '',
     });
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [couponError, setCouponError] = useState('');
+    const [isApplying, setIsApplying] = useState(false);
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode) return;
+        setIsApplying(true);
+        setCouponError('');
+        try {
+            const { data } = await api.post('/coupons/validate', { code: couponCode });
+            setAppliedCoupon(data);
+            setCouponCode('');
+        } catch (error) {
+            setCouponError(error.response?.data?.message || 'Invalid coupon');
+        } finally {
+            setIsApplying(false);
+        }
+    };
 
     const total = getCartTotal();
-    const tax = total * 0.1;
-    const shipping = total > 50 ? 0 : 10;
-    const finalTotal = total + tax + shipping;
+    const discount = appliedCoupon ? (total * appliedCoupon.discountPercentage) / 100 : 0;
+    const tax = (total - discount) * 0.1;
+    const shipping = (total - discount) > 50 ? 0 : 10;
+    const finalTotal = total - discount + tax + shipping;
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -36,33 +60,107 @@ const Checkout = () => {
     React.useEffect(() => {
         if (isOrderPlaced) {
             window.scrollTo(0, 0);
-            confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#4f46e5', '#818cf8', '#c7d2fe'] // Indigo shades
+            // Realistic Confetti "Fire" spread
+            const count = 200;
+            const defaults = {
+                origin: { y: 0.7 }
+            };
+
+            function fire(particleRatio, opts) {
+                confetti({
+                    ...defaults,
+                    ...opts,
+                    particleCount: Math.floor(count * particleRatio),
+                    colors: ['#4f46e5', '#818cf8', '#c084fc', '#f472b6', '#fbbf24'] // Indigo, Purple, Pink, Gold
+                });
+            }
+
+            fire(0.25, {
+                spread: 26,
+                startVelocity: 55,
             });
+            fire(0.2, {
+                spread: 60,
+            });
+            fire(0.35, {
+                spread: 100,
+                decay: 0.91,
+                scalar: 0.8
+            });
+            fire(0.1, {
+                spread: 120,
+                startVelocity: 25,
+                decay: 0.92,
+                scalar: 1.2
+            });
+            fire(0.1, {
+                spread: 120,
+                startVelocity: 45,
+            });
+
+            // Success Sound is now handled in CheckoutForm with delay
         }
     }, [isOrderPlaced]);
 
     if (isOrderPlaced) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex flex-col transition-colors duration-300">
+            <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex flex-col transition-colors duration-300 relative overflow-hidden">
+                {/* Background Blobs */}
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                    <div className="absolute top-[20%] right-[10%] w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[100px] animate-pulse"></div>
+                    <div className="absolute bottom-[10%] left-[10%] w-[400px] h-[400px] bg-purple-500/20 rounded-full blur-[100px] animate-pulse delay-1000"></div>
+                </div>
+
                 <Navbar />
-                <div className="flex-grow flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700 max-w-md w-full text-center">
-                        <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 dark:text-green-400">
-                            <CheckCircle className="h-10 w-10" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Order Placed Successfully!</h2>
-                        <p className="text-gray-500 dark:text-gray-400 mb-8">Thank you for your purchase. You can check your order status in My Orders.</p>
-                        <button
+                <div className="flex-grow flex items-center justify-center p-4 relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+                        className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-700/50 max-w-md w-full text-center relative overflow-hidden"
+                    >
+                        {/* Decorative Top Gradient Line */}
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                            className="w-24 h-24 bg-gradient-to-tr from-green-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/30"
+                        >
+                            <CheckCircle className="h-12 w-12 text-white" />
+                        </motion.div>
+
+                        <motion.h2
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="text-3xl font-bold text-slate-900 dark:text-white mb-3"
+                        >
+                            Order Placed!
+                        </motion.h2>
+
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                            className="text-gray-500 dark:text-gray-300 mb-8 leading-relaxed"
+                        >
+                            Thank you for your purchase. Your order has been securely processed and is on its way!
+                        </motion.p>
+
+                        <motion.button
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => window.location.href = '/'}
-                            className="w-full py-4 bg-slate-900 dark:bg-indigo-600 text-white rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-indigo-700 transition-colors"
+                            className="w-full py-4 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-indigo-600 dark:to-violet-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20 hover:shadow-xl transition-all"
                         >
                             Continue Shopping
-                        </button>
-                    </div>
+                        </motion.button>
+                    </motion.div>
                 </div>
                 <Footer />
             </div>
@@ -118,6 +216,10 @@ const Checkout = () => {
                                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
                                         <input required name="address" onChange={handleChange} type="text" className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" />
                                     </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+                                        <input required name="phoneNumber" onChange={handleChange} type="tel" placeholder="10-digit mobile number" className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" />
+                                    </div>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">City</label>
@@ -143,7 +245,7 @@ const Checkout = () => {
                                     <CheckoutForm
                                         cart={cart}
                                         user={user}
-                                        total={getCartTotal()}
+                                        total={finalTotal}
                                         shippingAddress={form}
                                         clearCart={clearCart}
                                         onDisplaySuccess={() => setIsOrderPlaced(true)}
@@ -173,16 +275,62 @@ const Checkout = () => {
 
                             <div className="h-px bg-gray-100 dark:bg-slate-700 my-4"></div>
 
+                            {/* Coupon Section */}
+                            <div className="mb-6">
+                                <p className="text-sm font-medium text-slate-700 dark:text-gray-300 mb-3">Apply Coupon</p>
+                                {!appliedCoupon ? (
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <div className="relative flex-1">
+                                                <Tag className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                                <input
+                                                    type="text"
+                                                    value={couponCode}
+                                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                                    placeholder="Enter code"
+                                                    className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={handleApplyCoupon}
+                                                disabled={isApplying || !couponCode}
+                                                className="px-4 py-2 bg-slate-900 dark:bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                                            >
+                                                {isApplying ? '...' : 'Apply'}
+                                            </button>
+                                        </div>
+                                        {couponError && <p className="text-xs text-red-500 ml-1">{couponError}</p>}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/30 rounded-xl">
+                                        <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                                            <Tag className="h-4 w-4" />
+                                            <span className="text-sm font-bold">{appliedCoupon.code}</span>
+                                            <span className="text-xs bg-green-100 dark:bg-green-900/40 px-2 py-0.5 rounded-full">-{appliedCoupon.discountPercentage}%</span>
+                                        </div>
+                                        <button onClick={() => setAppliedCoupon(null)} className="text-green-700 dark:text-green-400 hover:opacity-70">
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="space-y-2 mb-6">
-                                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                                <div className="flex justify-between text-gray-600 dark:text-gray-400 text-sm">
                                     <span>Subtotal</span>
                                     <span>₹{total.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                                    <span>Tax</span>
+                                {appliedCoupon && (
+                                    <div className="flex justify-between text-green-600 dark:text-green-400 text-sm">
+                                        <span>Discount</span>
+                                        <span>-₹{discount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-gray-600 dark:text-gray-400 text-sm">
+                                    <span>Tax (10%)</span>
                                     <span>₹{tax.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                                <div className="flex justify-between text-gray-600 dark:text-gray-400 text-sm">
                                     <span>Shipping</span>
                                     <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
                                 </div>

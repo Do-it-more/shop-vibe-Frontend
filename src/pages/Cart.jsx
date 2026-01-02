@@ -136,11 +136,24 @@ const Cart = () => {
 
                                 <div className="mt-6 flex flex-col gap-2">
                                     <p className="text-xs text-gray-400 text-center">We accept</p>
-                                    <div className="flex justify-center gap-4 grayscale opacity-60 dark:invert">
-                                        {/* Icons would go here */}
-                                        <div className="h-6 w-10 bg-gray-200 dark:bg-gray-600 rounded"></div>
-                                        <div className="h-6 w-10 bg-gray-200 dark:bg-gray-600 rounded"></div>
-                                        <div className="h-6 w-10 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                                    <div className="flex justify-center gap-4">
+                                        {/* Visa */}
+                                        <svg className="h-6 w-10 shadow-sm rounded bg-white p-0.5" viewBox="0 0 48 48">
+                                            <path fill="#1565C0" d="M10,34L10,34c-0.6,0-1.2-0.4-1.4-1L5.1,19.2c-0.2-0.6,0.2-1.2,0.8-1.2h4.5c0.4,0,0.8,0.2,1,0.6L14,24.5l2.6-5.9c0.2-0.4,0.6-0.6,1-0.6h4.5c0.6,0,1,0.6,0.8,1.2L19.4,33c-0.2,0.6-0.8,1-1.4,1H10z" />
+                                            <path fill="#1565C0" d="M22,18h4c0.6,0,1,0.4,1,1v14c0,0.6-0.4,1-1,1h-4c-0.6,0-1-0.4-1-1V19C21,18.4,21.4,18,22,18z" />
+                                            <path fill="#1565C0" d="M37.3,18h-4.6c-0.5,0-1,0.3-1.2,0.8l-5.5,14c-0.2,0.6,0.2,1.2,0.8,1.2h4.5c0.4,0,0.8-0.2,1-0.6l1.1-2.9h5.8l1.1,2.9c0.2,0.4,0.6,0.6,1,0.6h4.4c0.6,0,1-0.6,0.8-1.2l-5.5-14C38.3,18.3,37.8,18,37.3,18z M34.1,28.5l2-5.3l2,5.3H34.1z" />
+                                            <path fill="#FFC107" d="M4.5,18H3L2,19c0,0,1.5,0.1,2.9,0.5C6.4,20,8.2,21,9.5,22.1l0.7-3.5C10.2,18.6,10,18,4.5,18z" />
+                                        </svg>
+                                        {/* Mastercard */}
+                                        <svg className="h-6 w-10 shadow-sm rounded bg-white p-0.5" viewBox="0 0 48 48">
+                                            <circle cx="16" cy="24" r="16" fill="#ff9800" />
+                                            <circle cx="32" cy="24" r="16" fill="#f44336" />
+                                            <path fill="#ffeb3b" d="M24,24c0-3.1,0.9-6,2.4-8.4c-1.5-2.4-4.1-4.1-7-4.1c-4.7,0-8.6,3.8-8.6,8.5s3.8,8.5,8.6,8.5c2.9,0,5.5-1.7,7-4.1C24.9,30,24,27.1,24,24z" />
+                                        </svg>
+                                        {/* UPI */}
+                                        <div className="h-6 px-2 flex items-center bg-gradient-to-r from-orange-500 to-indigo-600 rounded shadow-sm text-[8px] font-black italic text-white uppercase tracking-tighter">
+                                            UPI BHIM
+                                        </div>
                                     </div>
                                 </div>
                             </div>

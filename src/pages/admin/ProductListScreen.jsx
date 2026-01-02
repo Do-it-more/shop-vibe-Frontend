@@ -8,12 +8,16 @@ import {
     Search,
     ChevronLeft,
     ChevronRight,
-    MoreVertical
+    MoreVertical,
+    ArrowUpDown
 } from 'lucide-react';
 
 const ProductListScreen = () => {
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState('');
     const [loading, setLoading] = useState(true);
+    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
 
     const fetchProducts = async () => {
         try {
@@ -26,8 +30,18 @@ const ProductListScreen = () => {
         }
     };
 
+    const fetchCategories = async () => {
+        try {
+            const { data } = await api.get('/categories');
+            setCategories(data);
+        } catch (error) {
+            console.error("Failed to fetch categories");
+        }
+    };
+
     useEffect(() => {
         fetchProducts();
+        fetchCategories();
     }, []);
 
     const deleteHandler = async (id) => {
@@ -41,17 +55,53 @@ const ProductListScreen = () => {
         }
     };
 
+    const handleSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedProducts = [...products]
+        .filter(product => !selectedCategory || product.category?.toLowerCase() === selectedCategory.toLowerCase())
+        .sort((a, b) => {
+            if (a[sortConfig.key] < b[sortConfig.key]) {
+                return sortConfig.direction === 'asc' ? -1 : 1;
+            }
+            if (a[sortConfig.key] > b[sortConfig.key]) {
+                return sortConfig.direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Products</h1>
-                <Link
-                    to="/admin/products/create"
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                >
-                    <Plus className="h-5 w-5" />
-                    Add Product
-                </Link>
+
+                <div className="flex gap-4">
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="">All Categories</option>
+                        {categories.map((category) => (
+                            <option key={category._id} value={category.name}>
+                                {category.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <Link
+                        to="/admin/products/create"
+                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                    >
+                        <Plus className="h-5 w-5" />
+                        Add Product
+                    </Link>
+                </div>
             </div>
 
             {/* Desktop View */}
@@ -60,15 +110,45 @@ const ProductListScreen = () => {
                     <table className="w-full text-left">
                         <thead>
                             <tr className="bg-gray-50 dark:bg-slate-700/50 text-gray-600 dark:text-gray-300 text-sm uppercase tracking-wider">
-                                <th className="p-4 font-semibold">Product</th>
-                                <th className="p-4 font-semibold">Category</th>
-                                <th className="p-4 font-semibold">Price</th>
+                                <th
+                                    className="p-4 font-semibold cursor-pointer hover:text-indigo-600 transition-colors select-none"
+                                    onClick={() => handleSort('name')}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Product
+                                        {sortConfig.key === 'name' && (
+                                            <ArrowUpDown className={`h-4 w-4 ${sortConfig.direction === 'asc' ? 'rotate-0' : 'rotate-180'} transition-transform`} />
+                                        )}
+                                    </div>
+                                </th>
+                                <th
+                                    className="p-4 font-semibold cursor-pointer hover:text-indigo-600 transition-colors select-none"
+                                    onClick={() => handleSort('category')}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Category
+                                        {sortConfig.key === 'category' && (
+                                            <ArrowUpDown className={`h-4 w-4 ${sortConfig.direction === 'asc' ? 'rotate-0' : 'rotate-180'} transition-transform`} />
+                                        )}
+                                    </div>
+                                </th>
+                                <th
+                                    className="p-4 font-semibold cursor-pointer hover:text-indigo-600 transition-colors select-none"
+                                    onClick={() => handleSort('price')}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        Price
+                                        {sortConfig.key === 'price' && (
+                                            <ArrowUpDown className={`h-4 w-4 ${sortConfig.direction === 'asc' ? 'rotate-0' : 'rotate-180'} transition-transform`} />
+                                        )}
+                                    </div>
+                                </th>
                                 <th className="p-4 font-semibold">Stock</th>
                                 <th className="p-4 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-                            {products.map((product) => (
+                            {sortedProducts.map((product) => (
                                 <tr key={product._id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
@@ -115,7 +195,7 @@ const ProductListScreen = () => {
 
             {/* Mobile View */}
             <div className="md:hidden grid grid-cols-1 gap-4">
-                {products.map((product) => (
+                {sortedProducts.map((product) => (
                     <div key={product._id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 flex gap-4">
                         <img
                             src={product.image}

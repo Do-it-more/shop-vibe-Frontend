@@ -10,7 +10,9 @@ import {
     Menu,
     X,
     List,
-    Home
+    Home,
+    AlertCircle,
+    Tag
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -21,10 +23,12 @@ const AdminLayout = () => {
 
     const navItems = [
         { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+        { path: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
         { path: '/admin/products', icon: Package, label: 'Products' },
         { path: '/admin/categories', icon: List, label: 'Categories' },
-        { path: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
         { path: '/admin/users', icon: Users, label: 'Users' },
+        { path: '/admin/complaints', icon: AlertCircle, label: 'Complaints' },
+        { path: '/admin/coupons', icon: Tag, label: 'Coupons' },
     ];
 
     return (

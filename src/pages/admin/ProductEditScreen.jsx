@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
-import { ArrowLeft, Upload, Loader, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Upload, Loader, Link as LinkIcon, Image as ImageIcon, Camera, X, Trash2 } from 'lucide-react';
 
 const ProductEditScreen = () => {
     const { id } = useParams();
@@ -10,7 +10,7 @@ const ProductEditScreen = () => {
 
     const [name, setName] = useState('');
     const [price, setPrice] = useState(0);
-    const [image, setImage] = useState('');
+    const [images, setImages] = useState([]); // Store array of image URLs
     const [brand, setBrand] = useState('');
     const [category, setCategory] = useState('');
     const [countInStock, setCountInStock] = useState(0);
@@ -18,8 +18,14 @@ const ProductEditScreen = () => {
     const [categories, setCategories] = useState([]);
 
     const [uploading, setUploading] = useState(false);
-    const [imageInputMethod, setImageInputMethod] = useState('upload'); // 'upload' or 'url'
+    const [imageInputMethod, setImageInputMethod] = useState('upload'); // 'upload', 'url', 'camera'
+    const [urlInput, setUrlInput] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Camera state
+    const [showCamera, setShowCamera] = useState(false);
+    const videoRef = useRef(null);
+    const [stream, setStream] = useState(null);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -42,7 +48,12 @@ const ProductEditScreen = () => {
                 const { data } = await api.get(`/products/${id}`);
                 setName(data.name);
                 setPrice(data.price);
-                setImage(data.image);
+                // Handle backward compatibility or new array structure
+                if (data.images && data.images.length > 0) {
+                    setImages(data.images);
+                } else if (data.image) {
+                    setImages([data.image]);
+                }
                 setBrand(data.brand);
                 setCategory(data.category);
                 setCountInStock(data.countInStock);
@@ -52,8 +63,24 @@ const ProductEditScreen = () => {
         }
     }, [id, isEditMode]);
 
+    // Cleanup camera stream on unmount
+    useEffect(() => {
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [stream]);
+
     const uploadFileHandler = async (e) => {
         const file = e.target.files[0];
+        if (!file) return;
+
+        if (images.length >= 4) {
+            alert("Maximum 4 images allowed");
+            return;
+        }
+
         const formData = new FormData();
         formData.append('image', file);
         setUploading(true);
@@ -66,11 +93,7 @@ const ProductEditScreen = () => {
             };
 
             const { data } = await api.post('/upload', formData, config);
-            // Construct full URL if needed, but relative usually works if proxy/base setup is right.
-            // Assuming API returns like /uploads/image.jpg
-            setImage(`http://localhost:5001${data}`);
-            // Note: In production this origin should be dynamic or relative. 
-            // For now hardcoding localhost for dev speed as per context.
+            setImages([...images, data]);
             setUploading(false);
         } catch (error) {
             console.error(error);
@@ -79,14 +102,106 @@ const ProductEditScreen = () => {
         }
     };
 
+    const addUrlHandler = () => {
+        if (!urlInput) return;
+        if (images.length >= 4) {
+            alert("Maximum 4 images allowed");
+            return;
+        }
+        setImages([...images, urlInput]);
+        setUrlInput('');
+    };
+
+    const removeImageHandler = (index) => {
+        const newImages = [...images];
+        newImages.splice(index, 1);
+        setImages(newImages);
+    };
+
+    const startCamera = async () => {
+        if (images.length >= 4) {
+            alert("Maximum 4 images allowed");
+            return;
+        }
+        setImageInputMethod('camera');
+        setShowCamera(true);
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+        } catch (err) {
+            console.error("Error accessing camera:", err);
+            alert("Could not access camera");
+            setShowCamera(false);
+        }
+    };
+
+    const stopCamera = () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            setStream(null);
+        }
+        setShowCamera(false);
+    };
+
+    const capturePhoto = async () => {
+        if (!videoRef.current) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoRef.current, 0, 0);
+
+        canvas.toBlob(async (blob) => {
+            const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
+
+            // Reuse upload logic
+            const formData = new FormData();
+            formData.append('image', file);
+            setUploading(true);
+
+            try {
+                const config = {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                };
+
+                const { data } = await api.post('/upload', formData, config);
+                setImages([...images, data]);
+                setUploading(false);
+                stopCamera();
+            } catch (error) {
+                console.error(error);
+                setUploading(false);
+                alert("Image upload failed");
+            }
+        }, 'image/jpeg');
+    };
+
+
     const submitHandler = async (e) => {
         e.preventDefault();
+
+        if (price < 0) {
+            alert("Price cannot be negative");
+            return;
+        }
+        if (countInStock < 0) {
+            alert("Stock count cannot be negative");
+            return;
+        }
+
         setLoading(true);
         try {
             const productData = {
                 name,
                 price,
-                image,
+                images, // Send array of images
+                image: images[0] || '', // Fallback for backward compatibility
                 brand,
                 category,
                 countInStock,
@@ -137,8 +252,19 @@ const ProductEditScreen = () => {
                             <input
                                 type="number"
                                 required
+                                min="0"
                                 value={price}
-                                onChange={(e) => setPrice(e.target.value)}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === '') {
+                                        setPrice('');
+                                    } else {
+                                        const num = Number(val);
+                                        if (!isNaN(num) && num >= 0) {
+                                            setPrice(num);
+                                        }
+                                    }
+                                }}
                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
@@ -147,8 +273,19 @@ const ProductEditScreen = () => {
                             <input
                                 type="number"
                                 required
+                                min="0"
                                 value={countInStock}
-                                onChange={(e) => setCountInStock(e.target.value)}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === '') {
+                                        setCountInStock('');
+                                    } else {
+                                        const num = Number(val);
+                                        if (!isNaN(num) && num >= 0) {
+                                            setCountInStock(num);
+                                        }
+                                    }
+                                }}
                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
@@ -183,62 +320,135 @@ const ProductEditScreen = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Product Image</label>
+                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+                            Product Images ({images.length}/4)
+                        </label>
 
-                        <div className="flex gap-4 mb-4">
-                            <button
-                                type="button"
-                                onClick={() => setImageInputMethod('upload')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${imageInputMethod === 'upload' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'}`}
-                            >
-                                <Upload className="h-4 w-4" /> Upload
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setImageInputMethod('url')}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${imageInputMethod === 'url' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'}`}
-                            >
-                                <LinkIcon className="h-4 w-4" /> URL
-                            </button>
-                        </div>
-
-                        {imageInputMethod === 'upload' ? (
-                            <div className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl p-8 text-center bg-gray-50 dark:bg-slate-900/50 hover:bg-gray-100 transition-colors cursor-pointer relative">
-                                {uploading ? (
-                                    <div className="flex justify-center">
-                                        <Loader className="animate-spin h-8 w-8 text-indigo-600" />
-                                    </div>
-                                ) : (
-                                    <>
-                                        <input
-                                            type="file"
-                                            onChange={uploadFileHandler}
-                                            accept="image/*"
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        {/* Image Preview Grid */}
+                        {images.length > 0 && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                {images.map((img, index) => (
+                                    <div key={index} className="relative group">
+                                        <img
+                                            src={img}
+                                            alt={`Product ${index + 1}`}
+                                            className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-slate-700"
                                         />
-                                        <div className="flex flex-col items-center">
-                                            <ImageIcon className="h-10 w-10 text-gray-400 mb-2" />
-                                            <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
-                                            <p className="text-xs text-gray-400 mt-1">SVG, PNG, JPG or GIF (max. 5MB)</p>
-                                        </div>
-                                    </>
-                                )}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImageHandler(index)}
+                                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
-                        ) : (
-                            <input
-                                type="text"
-                                required={imageInputMethod === 'url'}
-                                value={image}
-                                onChange={(e) => setImage(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                placeholder="https://example.com/image.jpg"
-                            />
                         )}
 
-                        {image && (
-                            <div className="mt-4 p-2 bg-gray-50 dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 inline-block">
-                                <span className="text-xs text-gray-500 mb-2 block">Preview</span>
-                                <img src={image} alt="Preview" className="h-32 rounded-lg object-cover" />
+                        {/* Input Methods */}
+                        {images.length < 4 && !showCamera && (
+                            <div className="space-y-4">
+                                <div className="flex gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setImageInputMethod('upload')}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${imageInputMethod === 'upload' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'}`}
+                                    >
+                                        <Upload className="h-4 w-4" /> Upload
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setImageInputMethod('url')}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${imageInputMethod === 'url' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'}`}
+                                    >
+                                        <LinkIcon className="h-4 w-4" /> URL
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={startCamera}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400 hover:bg-gray-200`}
+                                    >
+                                        <Camera className="h-4 w-4" /> Camera
+                                    </button>
+                                </div>
+
+                                {imageInputMethod === 'upload' && (
+                                    <div className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl p-8 text-center bg-gray-50 dark:bg-slate-900/50 hover:bg-gray-100 transition-colors cursor-pointer relative">
+                                        {uploading ? (
+                                            <div className="flex justify-center">
+                                                <Loader className="animate-spin h-8 w-8 text-indigo-600" />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <input
+                                                    type="file"
+                                                    onChange={uploadFileHandler}
+                                                    accept="image/*"
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                />
+                                                <div className="flex flex-col items-center">
+                                                    <ImageIcon className="h-10 w-10 text-gray-400 mb-2" />
+                                                    <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
+                                                    <p className="text-xs text-gray-400 mt-1">SVG, PNG, JPG (max 4 images)</p>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+
+                                {imageInputMethod === 'url' && (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={urlInput}
+                                            onChange={(e) => setUrlInput(e.target.value)}
+                                            className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            placeholder="https://example.com/image.jpg"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={addUrlHandler}
+                                            className="bg-indigo-600 text-white px-6 rounded-xl font-medium hover:bg-indigo-700"
+                                        >
+                                            Add
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Camera UI */}
+                        {showCamera && (
+                            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+                                <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden max-w-2xl w-full relative">
+                                    <button
+                                        type="button"
+                                        onClick={stopCamera}
+                                        className="absolute top-4 right-4 z-10 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
+                                    >
+                                        <X className="h-6 w-6" />
+                                    </button>
+                                    <div className="relative aspect-video bg-black">
+                                        <video
+                                            ref={videoRef}
+                                            autoPlay
+                                            playsInline
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div className="p-4 flex justify-center bg-gray-50 dark:bg-slate-900">
+                                        <button
+                                            type="button"
+                                            onClick={capturePhoto}
+                                            disabled={uploading}
+                                            className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/30"
+                                        >
+                                            {uploading ? <Loader className="animate-spin h-6 w-6" /> : <Camera className="h-6 w-6" />}
+                                            {uploading ? 'Processing...' : 'Capture Photo'}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

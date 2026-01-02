@@ -1,37 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, Loader, Check, Mail, Smartphone, Lock, User as UserIcon, Eye, EyeOff } from 'lucide-react';
+import api from '../services/api';
 
-const FloatingInput = ({ label, type, value, onChange, error }) => {
+const FloatingInput = ({ label, type, value, onChange, error, icon: Icon, disabled = false, rightElement = null, maxLength, ...props }) => {
     const [isFocused, setIsFocused] = useState(false);
     const hasValue = value.length > 0;
 
     return (
         <div className="relative mb-6">
-            <input
-                type={type}
-                value={value}
-                onChange={onChange}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                className={`
-                    w-full px-4 py-3.5 bg-gray-50 dark:bg-slate-900 border rounded-xl outline-none transition-all dark:text-white
-                    ${error ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900'}
-                    ${hasValue || isFocused ? 'pt-6 pb-2' : ''}
-                `}
-            />
-            <label
-                className={`
-                    absolute left-4 transition-all duration-200 pointer-events-none text-gray-500 dark:text-gray-400
-                    ${hasValue || isFocused
-                        ? 'top-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400'
-                        : 'top-3.5 text-base'}
-                `}
-            >
-                {label}
-            </label>
+            <div className="relative">
+                {Icon && (
+                    <div className="absolute left-4 top-3.5 text-gray-400">
+                        <Icon className="h-5 w-5" />
+                    </div>
+                )}
+                <input
+                    type={type}
+                    value={value}
+                    onChange={onChange}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    disabled={disabled}
+                    maxLength={maxLength}
+                    className={`
+                        w-full ${Icon ? 'pl-12' : 'px-4'} pr-4 py-3.5 bg-gray-50 dark:bg-slate-900 border rounded-xl outline-none transition-all dark:text-white
+                        ${error ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900'}
+                        ${hasValue || isFocused ? 'pt-6 pb-2' : ''}
+                        ${disabled ? 'opacity-70 cursor-not-allowed bg-gray-100 dark:bg-slate-800' : ''}
+                    `}
+                    {...props}
+                />
+                <label
+                    className={`
+                        absolute ${Icon ? 'left-12' : 'left-4'} transition-all duration-200 pointer-events-none text-gray-500 dark:text-gray-400
+                        ${hasValue || isFocused
+                            ? 'top-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400'
+                            : 'top-3.5 text-base'}
+                    `}
+                >
+                    {label}
+                </label>
+                {rightElement && (
+                    <div className="absolute right-3 top-2.5">
+                        {rightElement}
+                    </div>
+                )}
+            </div>
+            {error && <p className="mt-1 text-xs text-red-500 pl-1">{error}</p>}
         </div>
     );
 };
@@ -40,17 +58,164 @@ const Register = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        phone: '',
         password: '',
         confirmPassword: ''
     });
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    // Email Verification States
+    const [emailOtp, setEmailOtp] = useState('');
+    const [emailStatus, setEmailStatus] = useState('idle'); // idle, sending, sent, verifying, verified
+    const [verificationToken, setVerificationToken] = useState(null);
+    const [emailError, setEmailError] = useState('');
+
+    // Phone Verification States (Firebase)
+    const [phoneOtp, setPhoneOtp] = useState('');
+    const [phoneStatus, setPhoneStatus] = useState('idle'); // idle, sending, sent, verifying, verified
+    const [phoneVerificationToken, setPhoneVerificationToken] = useState(null); // Firebase ID Token
+    const [phoneError, setPhoneError] = useState('');
+    const [confirmationResult, setConfirmationResult] = useState(null);
+
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const { register } = useAuth();
     const navigate = useNavigate();
 
+    // Initialize Recaptcha
+    const setupRecaptcha = () => {
+        if (!window.recaptchaVerifier) {
+            import('../firebase').then(({ auth }) => {
+                import('firebase/auth').then(({ RecaptchaVerifier }) => {
+                    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                        'size': 'invisible',
+                        'callback': (response) => {
+                            // reCAPTCHA solved
+                        }
+                    });
+                });
+            });
+        }
+    };
+
+    useEffect(() => {
+        setupRecaptcha();
+    }, []);
+
     const handleChange = (e, field) => {
-        setFormData({ ...formData, [field]: e.target.value });
+        let value = e.target.value;
+        if (field === 'phone') {
+            value = value.replace(/\D/g, '');
+        }
+        setFormData({ ...formData, [field]: value });
+
+        if (field === 'email' && emailStatus !== 'idle') {
+            setEmailStatus('idle');
+            setVerificationToken(null);
+            setEmailError('');
+            setEmailOtp('');
+        }
+        if (field === 'phone' && phoneStatus !== 'idle') {
+            setPhoneStatus('idle');
+            setPhoneVerificationToken(null);
+            setPhoneError('');
+            setPhoneOtp('');
+            setConfirmationResult(null);
+        }
+    };
+
+    const handleSendVerification = async () => {
+        if (!formData.email) return setEmailError('Please enter an email address');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return setEmailError('Invalid email format');
+
+        setEmailStatus('sending');
+        setEmailError('');
+        try {
+            await api.post('/users/send-verification', { email: formData.email });
+            setEmailStatus('sent');
+        } catch (err) {
+            setEmailStatus('idle');
+            setEmailError(err.response?.data?.message || err.message || 'Failed to send verification email');
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!emailOtp) return;
+        setEmailStatus('verifying');
+        try {
+            const { data } = await api.post('/users/verify-email', { email: formData.email, otp: emailOtp });
+            setVerificationToken(data.verificationToken);
+            setEmailStatus('verified');
+        } catch (err) {
+            setEmailStatus('sent');
+            setError(err.response?.data?.message || 'Invalid OTP');
+        }
+    };
+
+    const handleSendPhoneVerification = async () => {
+        if (!formData.phone || formData.phone.length !== 10) return setPhoneError('Please enter a valid 10-digit phone number');
+
+        setPhoneStatus('sending');
+        setPhoneError('');
+
+        try {
+            const { auth } = await import('../firebase');
+            const { signInWithPhoneNumber } = await import('firebase/auth');
+
+            const phoneNumber = `+91${formData.phone}`; // User requested +91 hardcoded
+            const appVerifier = window.recaptchaVerifier;
+
+            const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+            setConfirmationResult(result);
+            setPhoneStatus('sent');
+        } catch (err) {
+            console.error(err);
+            setPhoneStatus('idle');
+            if (err.code === 'auth/invalid-phone-number') {
+                setPhoneError('Invalid phone number format.');
+            } else if (err.code === 'auth/too-many-requests') {
+                setPhoneError('Too many requests. Please try again later.');
+            } else {
+                setPhoneError('Failed to send SMS. ' + err.message);
+            }
+
+            // Allow resetting captcha to try again
+            if (window.recaptchaVerifier) {
+                try {
+                    window.recaptchaVerifier.clear();
+                } catch (e) { }
+                window.recaptchaVerifier = null;
+                setupRecaptcha();
+            }
+        }
+    };
+
+    const handleVerifyPhoneOtp = async () => {
+        if (!phoneOtp) return;
+        setPhoneStatus('verifying');
+
+        if (!confirmationResult) {
+            setPhoneError('Session expired. Please request OTP again.');
+            setPhoneStatus('idle');
+            return;
+        }
+
+        try {
+            const result = await confirmationResult.confirm(phoneOtp);
+            const user = result.user;
+            const idToken = await user.getIdToken();
+            console.log("Firebase Verified, Token:", idToken);
+
+            setPhoneVerificationToken(idToken);
+            setPhoneStatus('verified');
+        } catch (err) {
+            setPhoneStatus('sent');
+            setPhoneError('Invalid OTP or verification failed');
+            console.error(err);
+        }
     };
 
     const calculateStrength = (pass) => {
@@ -66,15 +231,23 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
-            return;
-        }
+
+        if (formData.phone.length !== 10) return setError('Phone number must be exactly 10 digits');
+        if (formData.password !== formData.confirmPassword) return setError('Passwords do not match');
+        if (!verificationToken) return setError('Please verify your email address');
+        if (!phoneVerificationToken) return setError('Please verify your phone number');
 
         setError('');
         setLoading(true);
         try {
-            await register(formData.name, formData.email, formData.password);
+            await register(
+                formData.name,
+                formData.email,
+                formData.password,
+                formData.phone,
+                verificationToken,
+                phoneVerificationToken // This is now Firebase ID Token
+            );
             navigate('/');
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed');
@@ -99,8 +272,10 @@ const Register = () => {
 
                 <div className="mb-8">
                     <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Create Account</h2>
-                    <p className="text-gray-500 dark:text-gray-400">Join Berlina Fashion Design and start shopping today</p>
+                    <p className="text-gray-500 dark:text-gray-400">Join Barlina Fashion Design and start shopping today</p>
                 </div>
+
+                <div id="recaptcha-container"></div>
 
                 {error && <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg text-sm border border-red-200 dark:border-red-800">{error}</div>}
 
@@ -110,23 +285,142 @@ const Register = () => {
                         type="text"
                         value={formData.name}
                         onChange={(e) => handleChange(e, 'name')}
+                        icon={UserIcon}
                     />
-                    <FloatingInput
-                        label="Email Address"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleChange(e, 'email')}
-                    />
+
+                    {/* Email Verification Section */}
+                    <div className="relative">
+                        <FloatingInput
+                            label="Email Address"
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => handleChange(e, 'email')}
+                            icon={Mail}
+                            error={emailError}
+                            disabled={emailStatus === 'verified' || emailStatus === 'verifying'}
+                            rightElement={
+                                emailStatus === 'verified' ? (
+                                    <span className="flex items-center text-green-500 text-xs font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+                                        <Check className="w-3 h-3 mr-1" /> Verified
+                                    </span>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={handleSendVerification}
+                                        disabled={emailStatus === 'sending' || !formData.email}
+                                        className="text-xs font-bold bg-slate-900 dark:bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                                    >
+                                        {emailStatus === 'sending' ? <Loader className="w-3 h-3 animate-spin" /> : 'Verify'}
+                                    </button>
+                                )
+                            }
+                        />
+                    </div>
+
+                    {/* Email OTP Input - conditionally shown */}
+                    {(emailStatus === 'sent' || emailStatus === 'verifying') && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            className="mb-4 flex gap-2"
+                        >
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    placeholder="Enter Email OTP"
+                                    value={emailOtp}
+                                    onChange={(e) => setEmailOtp(e.target.value)}
+                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleVerifyOtp}
+                                disabled={!emailOtp || emailStatus === 'verifying'}
+                                className="px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors flex items-center disabled:opacity-70"
+                            >
+                                {emailStatus === 'verifying' ? <Loader className="w-4 h-4 animate-spin" /> : 'Confirm'}
+                            </button>
+                        </motion.div>
+                    )}
+
+                    {/* Phone Number Verification Section */}
+                    <div className="relative">
+                        <FloatingInput
+                            label="Phone Number"
+                            type="text"
+                            maxLength={10}
+                            value={formData.phone}
+                            onChange={(e) => handleChange(e, 'phone')}
+                            icon={Smartphone}
+                            error={phoneError || (formData.phone && formData.phone.length !== 10 ? 'Phone number must be exactly 10 digits' : null)}
+                            disabled={phoneStatus === 'verified' || phoneStatus === 'verifying'}
+                            rightElement={
+                                phoneStatus === 'verified' ? (
+                                    <span className="flex items-center text-green-500 text-xs font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+                                        <Check className="w-3 h-3 mr-1" /> Verified
+                                    </span>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={handleSendPhoneVerification}
+                                        disabled={phoneStatus === 'sending' || formData.phone.length !== 10}
+                                        className="text-xs font-bold bg-slate-900 dark:bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                                    >
+                                        {phoneStatus === 'sending' ? <Loader className="w-3 h-3 animate-spin" /> : 'Verify'}
+                                    </button>
+                                )
+                            }
+                        />
+                    </div>
+
+                    {/* Phone OTP Input - conditionally shown */}
+                    {(phoneStatus === 'sent' || phoneStatus === 'verifying') && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            className="mb-4 flex gap-2"
+                        >
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    placeholder="Enter Phone OTP"
+                                    value={phoneOtp}
+                                    onChange={(e) => setPhoneOtp(e.target.value)}
+                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleVerifyPhoneOtp}
+                                disabled={!phoneOtp || phoneStatus === 'verifying'}
+                                className="px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors flex items-center disabled:opacity-70"
+                            >
+                                {phoneStatus === 'verifying' ? <Loader className="w-4 h-4 animate-spin" /> : 'Confirm'}
+                            </button>
+                        </motion.div>
+                    )}
+
                     <FloatingInput
                         label="Password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={(e) => handleChange(e, 'password')}
+                        icon={Lock}
+                        rightElement={
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none p-1"
+                            >
+                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                        }
                     />
 
                     {/* Password Strength Indicator */}
                     {formData.password && (
-                        <div className="mb-4 -mt-4">
+                        <div className="mb-4 -mt-4 pl-1">
                             <div className="flex gap-1 h-1 mb-2 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
                                 <div className={`flex-1 ${strength >= 25 ? 'bg-red-500' : 'bg-transparent'}`}></div>
                                 <div className={`flex-1 ${strength >= 50 ? 'bg-yellow-500' : 'bg-transparent'}`}></div>
@@ -141,14 +435,32 @@ const Register = () => {
 
                     <FloatingInput
                         label="Confirm Password"
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         value={formData.confirmPassword}
                         onChange={(e) => handleChange(e, 'confirmPassword')}
+                        icon={Lock}
+                        rightElement={
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none p-1"
+                            >
+                                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                        }
                     />
 
-                    <button disabled={loading} className="w-full py-4 bg-slate-900 dark:bg-indigo-600 text-white rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70">
+                    <button
+                        disabled={loading || emailStatus !== 'verified' || phoneStatus !== 'verified'}
+                        className="w-full py-4 bg-slate-900 dark:bg-indigo-600 text-white rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed"
+                    >
                         {loading ? <Loader className="animate-spin h-5 w-5" /> : 'Create Account'}
                     </button>
+                    {(emailStatus !== 'verified' || phoneStatus !== 'verified') && (
+                        <p className="text-center text-xs text-red-500 mt-2">
+                            * Both Email and Phone verification required
+                        </p>
+                    )}
                 </form>
 
                 <p className="mt-8 text-center text-xs text-gray-400">

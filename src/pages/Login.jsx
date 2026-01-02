@@ -8,7 +8,6 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -20,7 +19,7 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            await login(email, password, rememberMe);
+            await login(email, password);
             navigate('/');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to login');
@@ -45,7 +44,7 @@ const Login = () => {
                 <div className="text-center mb-10">
                     <Link to="/" className="inline-flex flex-col items-center justify-center mb-6 group">
                         <span className="font-serif text-3xl md:text-4xl tracking-[0.15em] font-bold text-slate-900 dark:text-white leading-none" style={{ fontFamily: '"Playfair Display", serif' }}>
-                            BERLINA
+                            BARLINA
                         </span>
                         <span className="text-xs md:text-sm tracking-[0.4em] font-light lowercase text-gray-500 dark:text-gray-400 mt-2">
                             fashion design
@@ -61,8 +60,8 @@ const Login = () => {
                     <div className="relative group">
                         <Mail className="absolute left-4 top-3.5 text-gray-400 h-5 w-5 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors" />
                         <input
-                            type="email"
-                            placeholder="Email Address"
+                            type="text"
+                            placeholder="Email Address or Phone Number"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -89,16 +88,7 @@ const Login = () => {
                         </button>
                     </div>
 
-                    <div className="flex justify-between items-center text-sm">
-                        <label className="flex items-center gap-2 cursor-pointer text-gray-600 dark:text-gray-300">
-                            <input
-                                type="checkbox"
-                                className="accent-indigo-600 w-4 h-4 rounded"
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                            />
-                            Remember me
-                        </label>
+                    <div className="flex justify-end items-center text-sm">
                         <Link to="/forgot-password" className="text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-700 dark:hover:text-indigo-300">Forgot Password?</Link>
                     </div>
 
