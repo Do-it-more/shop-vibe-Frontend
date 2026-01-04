@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { Plus, Trash2, Tag, Calendar, Percent } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const CouponListScreen = () => {
+    const { showToast } = useToast();
+    const { confirm } = useConfirm();
     const [coupons, setCoupons] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreate, setShowCreate] = useState(false);
@@ -37,12 +41,14 @@ const CouponListScreen = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this coupon?')) {
+        const isConfirmed = await confirm('Delete Coupon', 'Are you sure you want to delete this coupon?');
+        if (isConfirmed) {
             try {
                 await api.delete(`/coupons/${id}`);
                 fetchCoupons();
+                showToast("Coupon deleted successfully", "success");
             } catch (error) {
-                alert(error.response?.data?.message || 'Error deleting coupon');
+                showToast(error.response?.data?.message || 'Error deleting coupon', "error");
             }
         }
     };
@@ -54,8 +60,9 @@ const CouponListScreen = () => {
             setShowCreate(false);
             setNewCoupon({ code: '', discountPercentage: '', expiryDate: '' });
             fetchCoupons();
+            showToast("Coupon created successfully", "success");
         } catch (error) {
-            alert(error.response?.data?.message || 'Error creating coupon');
+            showToast(error.response?.data?.message || 'Error creating coupon', "error");
         }
     };
 

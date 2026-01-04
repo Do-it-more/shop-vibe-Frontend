@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, X, LogOut, Heart, Sun, Moon } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, LogOut, Heart, Sun, Moon, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -35,16 +35,16 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm sticky top-0 z-50 transition-all duration-300 border-b border-transparent dark:border-slate-800">
+        <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm sticky top-0 z-50 transition-all duration-300 border-b border-transparent dark:border-slate-800 pb-2 md:pb-0">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-20">
+                <div className="flex justify-between items-center h-16 md:h-20">
 
-                    {/* Logo */}
-                    <Link to="/" className="group flex flex-col items-center justify-center">
+                    {/* Logo - Mobile: Left, Desktop: Center/Left */}
+                    <Link to="/" className="group flex flex-col items-start md:items-center justify-center">
                         <span className="font-serif text-2xl md:text-3xl tracking-[0.15em] font-bold text-slate-900 dark:text-white leading-none group-hover:opacity-80 transition-opacity" style={{ fontFamily: '"Playfair Display", serif' }}>
                             BARLINA
                         </span>
-                        <span className="text-[10px] md:text-xs tracking-[0.4em] font-light lowercase text-gray-500 dark:text-gray-400 mt-1">
+                        <span className="text-[8px] md:text-xs tracking-[0.4em] font-light lowercase text-gray-500 dark:text-gray-400 mt-1 hidden md:block">
                             fashion design
                         </span>
                     </Link>
@@ -64,10 +64,13 @@ const Navbar = () => {
                             </button>
                         </form>
                     )}
-                    {!user && <div className="flex-1"></div>}
+                    {!user && <div className="hidden md:flex flex-1"></div>}
 
                     {/* Desktop Icons */}
                     <div className="hidden md:flex items-center space-x-6">
+                        <Link to="/" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-gray-300">
+                            <Home className="h-5 w-5" />
+                        </Link>
                         <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-gray-300">
                             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                         </button>
@@ -102,94 +105,40 @@ const Navbar = () => {
                         )}
                     </div>
 
-                    {/* Mobile Menu Button */}
-                    <div className="md:hidden flex items-center gap-4">
-                        <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-600 dark:text-gray-300">
-                            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                        </button>
+                    {/* Mobile Header Icons (Wishlist & Cart & Profile) */}
+                    <div className="md:hidden flex items-center gap-3">
                         {user && (
-                            <Link to="/cart" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 relative transition-colors">
-                                <ShoppingCart className="h-6 w-6" />
-                                {cartCount > 0 && (
-                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border border-white dark:border-slate-900">
-                                        {cartCount}
-                                    </span>
-                                )}
-                            </Link>
+                            <>
+                                <Link to="/wishlist" className="text-slate-900 dark:text-white">
+                                    <Heart className="h-6 w-6" />
+                                </Link>
+                                <Link to="/cart" className="text-slate-900 dark:text-white relative">
+                                    <ShoppingCart className="h-6 w-6" />
+                                    {cartCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                                            {cartCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            </>
                         )}
-                        {user && <ProfileDropdown />}
-                        <button onClick={() => setIsOpen(!isOpen)} className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 focus:outline-none p-2 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                        </button>
                     </div>
                 </div>
+
+                {/* Mobile Search Bar */}
+                <div className="md:hidden px-0 pb-2">
+                    <form onSubmit={handleSearch} className="relative">
+                        <Search className="absolute left-3 top-3 text-gray-400 h-5 w-5" />
+                        <input
+                            type="text"
+                            value={keyword}
+                            onChange={(e) => setKeyword(e.target.value)}
+                            placeholder="What are you looking for?"
+                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900 dark:bg-slate-800 dark:text-white text-sm shadow-sm"
+                        />
+                    </form>
+                </div>
             </div>
-
-            {/* Mobile Menu */}
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="md:hidden bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 overflow-hidden"
-                    >
-                        <div className="px-4 pt-6 pb-8 space-y-6">
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Search..."
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-gray-50 dark:bg-slate-800 dark:text-white"
-                                />
-                                <Search className="absolute left-3 top-3.5 text-gray-400 h-5 w-5" />
-                            </div>
-
-                            <div className="space-y-4">
-                                {user ? (
-                                    <>
-                                        <div className="flex items-center gap-3 p-2 bg-indigo-50 dark:bg-slate-800 rounded-lg">
-                                            {user.profilePhoto ? (
-                                                <img src={getProfileImg(user.profilePhoto)} className="w-10 h-10 rounded-full object-cover" alt={user.name} />
-                                            ) : (
-                                                <div className="w-10 h-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-bold">
-                                                    {user.name.charAt(0).toUpperCase()}
-                                                </div>
-                                            )}
-                                            <div>
-                                                <p className="font-bold text-slate-800 dark:text-white">{user.name}</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
-                                            </div>
-                                        </div>
-                                        <Link to="/wishlist" className="flex items-center space-x-3 text-gray-700 dark:text-gray-300 font-medium p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                                            <Heart className="h-5 w-5" />
-                                            <span>Start Wishlist</span>
-                                        </Link>
-                                        <button onClick={logout} className="flex items-center space-x-3 text-red-600 font-medium p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full">
-                                            <LogOut className="h-5 w-5" />
-                                            <span>Sign Out</span>
-                                        </button>
-                                    </>
-                                ) : (
-                                    <Link to="/login" className="flex items-center space-x-3 text-gray-700 dark:text-gray-300 font-medium p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 transition-colors">
-                                        <User className="h-5 w-5" />
-                                        <span>Login / Register</span>
-                                    </Link>
-                                )}
-                            </div>
-
-                            <div className="pt-4 border-t border-gray-100 dark:border-slate-800">
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Categories</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Link to="/category/smartphones" className="text-sm text-gray-600 dark:text-gray-300 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg">Smartphones</Link>
-                                    <Link to="/category/laptops" className="text-sm text-gray-600 dark:text-gray-300 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg">Laptops</Link>
-                                    <Link to="/category/headphones" className="text-sm text-gray-600 dark:text-gray-300 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg">Headphones</Link>
-                                    <Link to="/category/smartwatch" className="text-sm text-gray-600 dark:text-gray-300 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg">Smartwatch</Link>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </nav>
     );
 };

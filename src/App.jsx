@@ -6,6 +6,7 @@ import Wishlist from './pages/Wishlist';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 import Home from './pages/Home';
 import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
@@ -32,6 +33,7 @@ import ComplaintListScreen from './pages/admin/ComplaintListScreen';
 import ComplaintDetailScreen from './pages/admin/ComplaintDetailScreen';
 import CouponListScreen from './pages/admin/CouponListScreen';
 import ChatBot from './components/ChatBot';
+import MobileBottomNav from './components/MobileBottomNav';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -52,57 +54,69 @@ function ConditionalChatBot() {
   return <ChatBot />;
 }
 
+function ConditionalMobileNav() {
+  const location = useLocation();
+  // Hide on admin pages
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
+  return <MobileBottomNav />;
+}
+
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <ToastProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <Router>
-                <ScrollToTop />
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  {/* Protected Routes */}
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/products" element={<ProductList />} />
-                    <Route path="/category/:category" element={<ProductList />} />
-                    <Route path="/product/:id" element={<ProductDetail />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/wishlist" element={<Wishlist />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/orders" element={<OrderList />} />
-                    <Route path="/order/:id" element={<OrderDetail />} />
-                    <Route path="/profile" element={<Profile />} />
-                  </Route>
-                  {/* Admin Routes */}
-                  <Route element={<ProtectedRoute adminOnly={true} />}>
-                    <Route path="/admin" element={<AdminLayout />}>
-                      <Route index element={<AdminDashboard />} />
-                      <Route path="dashboard" element={<AdminDashboard />} />
-                      <Route path="products" element={<ProductListScreen />} />
-                      <Route path="products/create" element={<ProductEditScreen />} />
-                      <Route path="products/:id/edit" element={<ProductEditScreen />} />
-                      <Route path="orders" element={<OrderListScreen />} />
-                      <Route path="users" element={<UserListScreen />} />
-                      <Route path="users/create" element={<AdminCreateScreen />} />
-                      <Route path="categories" element={<CategoryListScreen />} />
-                      <Route path="categories/create" element={<CategoryEditScreen />} />
-                      <Route path="categories/:id/edit" element={<CategoryEditScreen />} />
-                      <Route path="complaints" element={<ComplaintListScreen />} />
-                      <Route path="complaints/:id" element={<ComplaintDetailScreen />} />
-                      <Route path="coupons" element={<CouponListScreen />} />
+          <ConfirmProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <Router>
+                  <ScrollToTop />
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    {/* Protected Routes */}
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/products" element={<ProductList />} />
+                      <Route path="/category/:category" element={<ProductList />} />
+                      <Route path="/product/:id" element={<ProductDetail />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="/cart" element={<Cart />} />
+                      <Route path="/wishlist" element={<Wishlist />} />
+                      <Route path="/checkout" element={<Checkout />} />
+                      <Route path="/orders" element={<OrderList />} />
+                      <Route path="/order/:id" element={<OrderDetail />} />
+                      <Route path="/profile" element={<Profile />} />
                     </Route>
-                  </Route>
-                </Routes>
-                <ConditionalChatBot />
-              </Router>
-            </WishlistProvider>
-          </CartProvider>
+                    {/* Admin Routes */}
+                    <Route element={<ProtectedRoute adminOnly={true} />}>
+                      <Route path="/admin" element={<AdminLayout />}>
+                        <Route index element={<AdminDashboard />} />
+                        <Route path="dashboard" element={<AdminDashboard />} />
+                        <Route path="products" element={<ProductListScreen />} />
+                        <Route path="products/create" element={<ProductEditScreen />} />
+                        <Route path="products/:id/edit" element={<ProductEditScreen />} />
+                        <Route path="orders" element={<OrderListScreen />} />
+                        <Route path="users" element={<UserListScreen />} />
+                        <Route path="users/create" element={<AdminCreateScreen />} />
+                        <Route path="categories" element={<CategoryListScreen />} />
+                        <Route path="categories/create" element={<CategoryEditScreen />} />
+                        <Route path="categories/:id/edit" element={<CategoryEditScreen />} />
+                        <Route path="complaints" element={<ComplaintListScreen />} />
+                        <Route path="complaints/:id" element={<ComplaintDetailScreen />} />
+                        <Route path="coupons" element={<CouponListScreen />} />
+                      </Route>
+                    </Route>
+                  </Routes>
+                  <ConditionalChatBot />
+                  <ConditionalMobileNav />
+                </Router>
+              </WishlistProvider>
+            </CartProvider>
+          </ConfirmProvider>
         </ToastProvider>
       </AuthProvider>
     </ThemeProvider>

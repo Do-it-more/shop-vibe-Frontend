@@ -47,8 +47,8 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    const register = async (name, email, password, phoneNumber, verificationToken) => {
-        const { data } = await api.post('/users', { name, email, password, phoneNumber, verificationToken });
+    const register = async (name, email, password, phoneNumber, verificationToken, phoneVerificationToken) => {
+        const { data } = await api.post('/users', { name, email, password, phoneNumber, verificationToken, phoneVerificationToken });
         // Default to localStorage for registration, or ask? Usually assume persistent or ephemeral?
         // Let's assume persistent for new registrations for better UX
         localStorage.setItem('token', data.token);

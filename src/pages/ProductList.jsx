@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -11,12 +11,13 @@ const ProductList = () => {
     const { category } = useParams();
     const [searchParams] = useSearchParams();
     const keyword = searchParams.get('keyword') || '';
+    const queryCategory = searchParams.get('category') || '';
 
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [sortOption, setSortOption] = useState('newest');
     const [priceRange, setPriceRange] = useState([0, 5000]);
-    const [selectedCategories, setSelectedCategories] = useState(category ? [category] : []);
+    const [selectedCategories, setSelectedCategories] = useState((category || queryCategory) ? [(category || queryCategory).toLowerCase()] : []);
     const [minRating, setMinRating] = useState(0);
     const [onlyInStock, setOnlyInStock] = useState(false);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -39,14 +40,15 @@ const ProductList = () => {
         fetchProducts();
     }, [keyword]); // Re-fetch when keyword changes
 
-    // Update selected categories when URL param changes
+    // Update selected categories when URL param or query param changes
     useEffect(() => {
-        if (category) {
-            setSelectedCategories([category.toLowerCase()]);
+        const activeCategory = category || queryCategory;
+        if (activeCategory) {
+            setSelectedCategories([activeCategory.toLowerCase()]);
         } else {
             setSelectedCategories([]);
         }
-    }, [category]);
+    }, [category, queryCategory]);
 
     // Filter products logic
     useEffect(() => {
@@ -94,7 +96,14 @@ const ProductList = () => {
         }
     };
 
-    const allCategories = [...new Set(products.map(p => p.category))];
+    const allCategories = useMemo(() => {
+        const uniqueLower = [...new Set(products.map(p => p.category.toLowerCase()))];
+        // Map back to the original capitalization if possible, or just capitalize properly
+        return uniqueLower.map(lower => {
+            const original = products.find(p => p.category.toLowerCase() === lower)?.category;
+            return original || lower;
+        });
+    }, [products]);
 
     if (loading) {
         return (

@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 import { ArrowLeft, Upload, Loader, Link as LinkIcon, Image as ImageIcon, Camera, X, Trash2 } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 const ProductEditScreen = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const isEditMode = !!id;
 
     const [name, setName] = useState('');
@@ -77,7 +79,7 @@ const ProductEditScreen = () => {
         if (!file) return;
 
         if (images.length >= 4) {
-            alert("Maximum 4 images allowed");
+            showToast("Maximum 4 images allowed", "error");
             return;
         }
 
@@ -98,14 +100,14 @@ const ProductEditScreen = () => {
         } catch (error) {
             console.error(error);
             setUploading(false);
-            alert("Image upload failed");
+            showToast("Image upload failed", "error");
         }
     };
 
     const addUrlHandler = () => {
         if (!urlInput) return;
         if (images.length >= 4) {
-            alert("Maximum 4 images allowed");
+            showToast("Maximum 4 images allowed", "error");
             return;
         }
         setImages([...images, urlInput]);
@@ -120,7 +122,7 @@ const ProductEditScreen = () => {
 
     const startCamera = async () => {
         if (images.length >= 4) {
-            alert("Maximum 4 images allowed");
+            showToast("Maximum 4 images allowed", "error");
             return;
         }
         setImageInputMethod('camera');
@@ -133,7 +135,7 @@ const ProductEditScreen = () => {
             }
         } catch (err) {
             console.error("Error accessing camera:", err);
-            alert("Could not access camera");
+            showToast("Could not access camera", "error");
             setShowCamera(false);
         }
     };
@@ -177,7 +179,7 @@ const ProductEditScreen = () => {
             } catch (error) {
                 console.error(error);
                 setUploading(false);
-                alert("Image upload failed");
+                showToast("Image upload failed", "error");
             }
         }, 'image/jpeg');
     };
@@ -187,11 +189,11 @@ const ProductEditScreen = () => {
         e.preventDefault();
 
         if (price < 0) {
-            alert("Price cannot be negative");
+            showToast("Price cannot be negative", "error");
             return;
         }
         if (countInStock < 0) {
-            alert("Stock count cannot be negative");
+            showToast("Stock count cannot be negative", "error");
             return;
         }
 
@@ -213,10 +215,11 @@ const ProductEditScreen = () => {
             } else {
                 await api.post('/products', productData);
             }
+            showToast(`Product ${isEditMode ? 'updated' : 'created'} successfully`, "success");
             navigate('/admin/products');
         } catch (error) {
             console.error(error);
-            alert("Failed to save product");
+            showToast("Failed to save product", "error");
         } finally {
             setLoading(false);
         }

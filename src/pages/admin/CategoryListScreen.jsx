@@ -2,8 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const CategoryListScreen = () => {
+    const { showToast } = useToast();
+    const { confirm } = useConfirm();
     const [categories, setCategories] = useState([]);
 
     useEffect(() => {
@@ -15,12 +19,14 @@ const CategoryListScreen = () => {
     }, []);
 
     const deleteHandler = async (id) => {
-        if (window.confirm('Are you sure you want to delete this category?')) {
+        const isConfirmed = await confirm('Delete Category', 'Are you sure you want to delete this category?');
+        if (isConfirmed) {
             try {
                 await api.delete(`/categories/${id}`);
                 setCategories(categories.filter(cat => cat._id !== id));
+                showToast("Category deleted successfully", "success");
             } catch (error) {
-                alert('Failed to delete category');
+                showToast('Failed to delete category', 'error');
             }
         }
     };

@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 import { ArrowLeft, Loader } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 const CategoryEditScreen = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const isEditMode = !!id;
 
     const [name, setName] = useState('');
@@ -38,9 +40,10 @@ const CategoryEditScreen = () => {
             } else {
                 await api.post('/categories', categoryData);
             }
+            showToast(`Category ${isEditMode ? 'updated' : 'created'} successfully`, "success");
             navigate('/admin/categories');
         } catch (error) {
-            alert("Failed to save category");
+            showToast("Failed to save category", "error");
         } finally {
             setLoading(false);
         }

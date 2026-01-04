@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
@@ -8,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Cart = () => {
     const { cart, updateQuantity, removeFromCart, getCartTotal } = useCart();
+    const { user } = useAuth();
     const total = getCartTotal();
     const tax = total * 0.1;
     const shipping = total > 50 ? 0 : 10;
@@ -129,10 +131,24 @@ const Cart = () => {
                                     </div>
                                 </div>
 
-                                <Link to="/checkout" className="block w-full py-4 bg-slate-900 dark:bg-indigo-600 text-white text-center rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2">
-                                    Proceed to Checkout
-                                    <ArrowRight className="h-4 w-4" />
-                                </Link>
+                                {user?.role === 'admin' ? (
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900/30 rounded-xl">
+                                            <p className="text-sm text-orange-700 dark:text-orange-400 font-medium text-center">
+                                                Checkout is disabled for Admin accounts.
+                                            </p>
+                                        </div>
+                                        <button disabled className="w-full py-4 bg-gray-200 dark:bg-slate-700 text-gray-400 dark:text-gray-500 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                                            Proceed to Checkout
+                                            <ArrowRight className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <Link to="/checkout" className="block w-full py-4 bg-slate-900 dark:bg-indigo-600 text-white text-center rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2">
+                                        Proceed to Checkout
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                )}
 
                                 <div className="mt-6 flex flex-col gap-2">
                                     <p className="text-xs text-gray-400 text-center">We accept</p>

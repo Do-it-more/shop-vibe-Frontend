@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
-import { Loader, Lock, CreditCard, QrCode, Smartphone } from 'lucide-react';
+import { Loader, Lock, CreditCard, QrCode, Smartphone, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { useToast } from '../context/ToastContext';
 import { playSuccessSound, initializeAudio } from '../utils/audio';
 
-const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplaySuccess }) => {
+const CheckoutForm = ({ cart, user, total, itemsPrice, taxPrice, shippingPrice, shippingAddress, clearCart, onDisplaySuccess }) => {
     const stripe = useStripe();
     const elements = useElements();
     const { showToast } = useToast();
@@ -23,13 +24,13 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
                 qty: item.quantity,
                 image: item.image,
                 price: item.price,
-                product: item._id || item.id
+                product: item.product._id || item.product
             })),
             shippingAddress,
             paymentMethod: payMethod,
-            itemsPrice: total, // simplified
-            taxPrice: 0,
-            shippingPrice: 0,
+            itemsPrice: itemsPrice,
+            taxPrice: taxPrice,
+            shippingPrice: shippingPrice,
             totalPrice: total
         };
         const { data } = await api.post('/orders', orderData);
@@ -95,7 +96,7 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
         setError(null);
 
         try {
-            // Simulate UPI delay
+            // Simulate processing time for better UX
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             const createdOrder = await createOrder('UPI');
@@ -124,25 +125,29 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
             payer: { email_address: user.email }
         };
         await api.put(`/orders/${orderId}/pay`, paymentResult);
-        // Delay success sound 3 seconds
-        setTimeout(() => {
-            playSuccessSound();
-        }, 3000);
+
+        // Immediate success sound
+        playSuccessSound();
 
         showToast("Payment successful! Order placed.", "success");
         clearCart();
 
-        // Delay callback slightly to let toast be seen if needed, 
-        // though toast persists across re-renders if context is high enough.
-        // onDisplaySuccess switches the view.
+        // Short delay for view switch to allow sound/toast perception
         setTimeout(() => {
             onDisplaySuccess();
-        }, 1000);
+        }, 500);
     };
 
     const validateShipping = () => {
-        if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.postalCode || !shippingAddress.country || !shippingAddress.phoneNumber) {
-            setError("Please fill in all shipping fields");
+        const missing = [];
+        if (!shippingAddress.address) missing.push("Address");
+        if (!shippingAddress.phoneNumber) missing.push("Phone Number");
+        if (!shippingAddress.city) missing.push("City");
+        if (!shippingAddress.postalCode) missing.push("Postal Code");
+        if (!shippingAddress.country) missing.push("State/Province");
+
+        if (missing.length > 0) {
+            setError(`Please fill in: ${missing.join(", ")}`);
             return false;
         }
         return true;
@@ -168,6 +173,44 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
 
     return (
         <div className="space-y-6">
+            <AnimatePresence>
+                {loading && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 dark:bg-slate-900/90 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            className="flex flex-col items-center"
+                        >
+                            <div className="relative w-24 h-24 mb-6">
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                    className="absolute inset-0 border-4 border-indigo-200 dark:border-indigo-900 rounded-full"
+                                ></motion.div>
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear", delay: 0.1 }} // Offset animation
+                                    className="absolute inset-0 border-4 border-t-indigo-600 dark:border-t-indigo-500 rounded-full border-r-transparent border-b-transparent border-l-transparent"
+                                ></motion.div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <Lock className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Processing Payment</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-center max-w-xs">
+                                Please wait while we securely process your order...
+                            </p>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Tabs */}
             <div className="flex p-1 bg-gray-100 dark:bg-slate-700 rounded-xl">
                 <button
@@ -218,7 +261,7 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
                         disabled={!stripe || loading}
                         className="w-full py-4 bg-slate-900 dark:bg-indigo-600 text-white rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {loading ? <Loader className="animate-spin h-5 w-5" /> : `Pay ₹${finalTotal}`}
+                        {loading ? 'Processing...' : `Pay ₹${finalTotal}`}
                     </button>
                 </form>
             ) : (
@@ -261,7 +304,7 @@ const CheckoutForm = ({ cart, user, total, shippingAddress, clearCart, onDisplay
                         disabled={loading}
                         className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        {loading ? <Loader className="animate-spin h-5 w-5" /> : `Verify & Pay ₹${finalTotal}`}
+                        {loading ? 'Processing...' : `Verify & Pay ₹${finalTotal}`}
                     </button>
                 </form>
             )}

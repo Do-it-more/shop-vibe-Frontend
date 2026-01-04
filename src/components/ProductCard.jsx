@@ -6,7 +6,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
-const ProductCard = ({ product }) => {
+const ProductCard = React.memo(({ product }) => {
     const id = product.id || product._id;
     const { toggleWishlist, isInWishlist } = useWishlist();
     const { user } = useAuth();
@@ -24,6 +24,8 @@ const ProductCard = ({ product }) => {
             return;
         }
 
+        if (product.countInStock === 0) return;
+
         setAdding(true);
         await addToCart(product, 1);
         setAdding(false);
@@ -32,8 +34,7 @@ const ProductCard = ({ product }) => {
     const handleWishlistClick = (e) => {
         e.preventDefault();
         if (!user) {
-            // alert("Please login to use wishlist"); 
-            navigate('/login'); // Better UX per requirements
+            navigate('/login');
             return;
         }
         toggleWishlist(id);
@@ -42,24 +43,27 @@ const ProductCard = ({ product }) => {
     const getImageUrl = (path) => {
         if (!path) return 'https://via.placeholder.com/300';
         if (path.startsWith('http')) return path;
-        // Prepend backend URL for relative paths
-        const baseUrl = 'http://localhost:5001';
-        return `${baseUrl}${path}`;
+        const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:5001').replace(/\/api\/?$/, '');
+        return `${apiBase}${path}`;
+    };
+
+    const handleCardClick = () => {
+        navigate(`/product/${id}`);
     };
 
     return (
         <motion.div
             whileHover={{ y: -8 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)] transition-all duration-300 overflow-hidden border border-gray-100 dark:border-slate-700 group relative"
+            onClick={handleCardClick}
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)] transition-all duration-300 overflow-hidden border border-gray-100 dark:border-slate-700 group relative cursor-pointer"
         >
-            <Link to={`/product/${id}`} className="block relative aspect-[3/4] overflow-hidden bg-gray-50 dark:bg-slate-700">
+            <div className="block relative aspect-square overflow-hidden bg-gray-50 dark:bg-slate-700">
                 <img
                     src={getImageUrl(product.image)}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
 
-                {/* Wishlist Button */}
                 <button
                     onClick={handleWishlistClick}
                     className="absolute top-3 right-3 p-2 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shadow-sm hover:bg-white dark:hover:bg-slate-900 transition-colors z-10"
@@ -72,14 +76,16 @@ const ProductCard = ({ product }) => {
                         {product.discount}% OFF
                     </span>
                 )}
-                {/* Quick add overlay */}
+
                 <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/50 to-transparent">
                     <button
                         onClick={handleAddToCart}
-                        disabled={adding}
-                        className="w-full py-3 bg-white text-slate-900 font-semibold rounded-xl hover:bg-indigo-600 hover:text-white transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
+                        disabled={adding || product.countInStock === 0}
+                        className={`w-full py-3 font-semibold rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ${product.countInStock === 0 ? 'bg-gray-100 text-gray-400' : 'bg-white text-slate-900 hover:bg-indigo-600 hover:text-white'}`}
                     >
-                        {adding ? (
+                        {product.countInStock === 0 ? (
+                            <span className="text-sm">Out of Stock</span>
+                        ) : adding ? (
                             <span className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></span>
                         ) : (
                             <>
@@ -89,18 +95,34 @@ const ProductCard = ({ product }) => {
                         )}
                     </button>
                 </div>
-            </Link>
+            </div>
 
             <div className="p-3 sm:p-5">
                 <div className="flex items-center space-x-1 mb-2">
                     <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400 fill-current" />
                     <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">{product.rating}</span>
-                    <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">({product.numReviews || product.reviews})</span>
+                    <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">({product.numReviews || (product.reviews ? product.reviews.length : 0)})</span>
                 </div>
-                <Link to={`/product/${id}`}>
+                <div>
                     <h3 className="text-sm sm:text-lg font-bold text-slate-800 dark:text-slate-100 mb-1 truncate hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{product.name}</h3>
-                </Link>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 capitalize">{product.category}</p>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2 capitalize">{product.category}</p>
+
+                <div className="mb-3">
+                    {product.countInStock > 0 ? (
+                        <div className="flex items-center gap-1.5">
+                            <div className={`h-1.5 w-1.5 rounded-full ${product.countInStock <= 5 ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`}></div>
+                            <span className={`text-[10px] sm:text-xs font-medium ${product.countInStock <= 5 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
+                                {product.countInStock <= 5 ? `Only ${product.countInStock} left` : `${product.countInStock} in stock`}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5">
+                            <div className="h-1.5 w-1.5 rounded-full bg-red-500"></div>
+                            <span className="text-[10px] sm:text-xs font-semibold text-red-500">Out of Stock</span>
+                        </div>
+                    )}
+                </div>
 
                 <div className="flex items-end justify-between">
                     <div className="flex flex-col">
@@ -111,6 +133,6 @@ const ProductCard = ({ product }) => {
             </div>
         </motion.div>
     );
-};
+});
 
 export default ProductCard;

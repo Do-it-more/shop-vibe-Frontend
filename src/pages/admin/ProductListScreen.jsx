@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import {
@@ -11,8 +11,12 @@ import {
     MoreVertical,
     ArrowUpDown
 } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const ProductListScreen = () => {
+    const { showToast } = useToast();
+    const { confirm } = useConfirm();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -45,12 +49,14 @@ const ProductListScreen = () => {
     }, []);
 
     const deleteHandler = async (id) => {
-        if (window.confirm('Are you sure you want to delete this product?')) {
+        const isConfirmed = await confirm('Delete Product', 'Are you sure you want to delete this product?');
+        if (isConfirmed) {
             try {
                 await api.delete(`/products/${id}`);
                 setProducts(products.filter(product => product._id !== id));
+                showToast('Product deleted successfully', 'success');
             } catch (error) {
-                alert('Failed to delete product');
+                showToast('Failed to delete product', 'error');
             }
         }
     };
@@ -63,17 +69,19 @@ const ProductListScreen = () => {
         setSortConfig({ key, direction });
     };
 
-    const sortedProducts = [...products]
-        .filter(product => !selectedCategory || product.category?.toLowerCase() === selectedCategory.toLowerCase())
-        .sort((a, b) => {
-            if (a[sortConfig.key] < b[sortConfig.key]) {
-                return sortConfig.direction === 'asc' ? -1 : 1;
-            }
-            if (a[sortConfig.key] > b[sortConfig.key]) {
-                return sortConfig.direction === 'asc' ? 1 : -1;
-            }
-            return 0;
-        });
+    const sortedProducts = useMemo(() => {
+        return [...products]
+            .filter(product => !selectedCategory || product.category?.toLowerCase() === selectedCategory.toLowerCase())
+            .sort((a, b) => {
+                if (a[sortConfig.key] < b[sortConfig.key]) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (a[sortConfig.key] > b[sortConfig.key]) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+    }, [products, selectedCategory, sortConfig]);
 
     return (
         <div className="space-y-6">

@@ -8,10 +8,18 @@ import { Truck, RotateCcw, ShieldCheck, Award, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const categories = [
-    { name: 'Smartphones', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', count: '120+' },
-    { name: 'Laptops', image: 'https://images.unsplash.com/photo-1493119508027-2b584f234d6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', count: '85+' },
-    { name: 'Headphones', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', count: '200+' },
-    { name: 'Smartwatch', image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', count: '60+' },
+    { name: 'Just Arrived', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', badge: 'New' },
+    { name: 'Home Improvement', image: 'https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', badge: 'Selling' },
+    { name: 'All Brands', image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', badge: 'Brand' },
+    { name: 'Electronics', image: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { name: 'Kitchen', image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { name: 'Gifts', image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { name: 'Gardening', image: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { name: "Kid's Toys", image: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { name: 'Winter Collection', image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { name: 'Jewellery', image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { name: 'Shop by Industry', image: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+    { name: 'Wedding Gifts', image: 'https://images.unsplash.com/photo-1544377193-33dcf4d68fb5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
 ];
 
 const features = [
@@ -19,7 +27,10 @@ const features = [
     { icon: RotateCcw, title: "Easy Returns", desc: "30-day money back guarantee" },
     { icon: ShieldCheck, title: "Secure Payment", desc: "100% protected transactions" },
     { icon: Award, title: "Top Quality", desc: "Original products guaranteed" },
+    { icon: Award, title: "Best Offers", desc: "Weekly Discounts" }, // Added to ensure visual balance if needed, or stick to 4. 
 ];
+// restore to 4 to match design grid if horizontal scroll not used
+const featuresList = features.slice(0, 4);
 
 const Home = () => {
     const [products, setProducts] = useState([]);
@@ -37,57 +48,45 @@ const Home = () => {
     }, []);
 
     return (
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col pb-16 md:pb-0">
             <Navbar />
 
             <main className="flex-grow">
-                <Hero />
+                {/* Mobile View Toggle - Show only on larger screens if we want to separate, but here we can make responsive */}
 
-                {/* Features Section */}
-                <section className="py-12 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {features.map((feature, index) => (
-                                <div key={index} className="flex items-center gap-4 p-6 rounded-2xl bg-gray-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg transition-all duration-300 border border-transparent hover:border-gray-100 dark:hover:border-slate-700">
-                                    <div className="p-3 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
-                                        <feature.icon className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-slate-900 dark:text-white">{feature.title}</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">{feature.desc}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
+                <div className="hidden md:block">
+                    <Hero />
+                </div>
 
-                {/* Categories Section */}
-                <section className="py-20 bg-gray-50 dark:bg-slate-800/50">
+                {/* Categories Section - Redesigned for Mobile (and Desktop) */}
+                <section className="py-8 md:py-12 bg-white dark:bg-slate-900">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex justify-between items-end mb-12">
-                            <div>
-                                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">Shop by Category</h2>
-                                <p className="text-gray-500 dark:text-gray-400">Explore our most popular collections</p>
+
+                        {/* Title Banner */}
+                        <div className="flex justify-center mb-8">
+                            <div className="relative bg-gradient-to-r from-red-600 to-indigo-900 text-white px-10 py-2 rounded-sm shadow-md transform -skew-x-12">
+                                <h2 className="text-xl md:text-2xl font-bold tracking-wider transform skew-x-12 uppercase" style={{ fontFamily: 'serif' }}>Top Categories</h2>
                             </div>
-                            <Link to="/products" className="hidden md:flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold hover:gap-3 transition-all">
-                                View All <ArrowRight className="h-5 w-5" />
-                            </Link>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-4 gap-3 md:gap-8">
                             {categories.map((cat, idx) => (
-                                <Link key={idx} to={`/category/${cat.name.toLowerCase()}`} className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer">
-                                    <img
-                                        src={cat.image}
-                                        alt={cat.name}
-                                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                                    <div className="absolute bottom-6 left-6 text-white">
-                                        <p className="text-sm text-gray-300 mb-1">{cat.count}</p>
-                                        <h3 className="text-2xl font-bold group-hover:text-indigo-300 transition-colors">{cat.name}</h3>
+                                <Link key={idx} to={`/products?category=${cat.name}`} className="flex flex-col items-center group cursor-pointer">
+                                    <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 mb-2">
+                                        <img
+                                            src={cat.image}
+                                            alt={cat.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                        {cat.badge && (
+                                            <span className={`absolute top-0 left-0 text-[10px] text-white px-2 py-0.5 rounded-br-lg ${cat.badge === 'New' ? 'bg-red-500' : cat.badge === 'Selling' ? 'bg-indigo-600' : 'bg-pink-500'}`}>
+                                                {cat.badge}
+                                            </span>
+                                        )}
                                     </div>
+                                    <span className="text-[10px] md:text-sm font-medium text-center text-slate-700 dark:text-gray-300 leading-tight">
+                                        {cat.name}
+                                    </span>
                                 </Link>
                             ))}
                         </div>
@@ -119,27 +118,7 @@ const Home = () => {
                     </div>
                 </section>
 
-                {/* Promo Banner */}
-                <section className="py-20 bg-indigo-900 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-[100px] translate-x-1/3 -translate-y-1/3"></div>
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                            <div className="text-white space-y-6">
-                                <h2 className="text-4xl md:text-5xl font-bold leading-tight">Winter Sale is Here! <br /> Get Up To 70% Off</h2>
-                                <p className="text-indigo-200 text-lg max-w-md">Don't miss out on the biggest sale of the year. Limited stock available.</p>
-                                <Link to="/products" className="px-8 py-3 bg-white text-indigo-900 rounded-full font-bold hover:bg-indigo-50 transition-colors inline-block text-center">
-                                    Shop the Sale
-                                </Link>
-                            </div>
-                            <div className="relative">
-                                {/* Decorative image or pattern could go here */}
-                                <div className="aspect-video bg-indigo-800 rounded-2xl flex items-center justify-center border border-indigo-700">
-                                    <p className="text-indigo-400 font-bold text-xl uppercase tracking-widest">Limited Time Offer</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+
             </main>
 
             <Footer />

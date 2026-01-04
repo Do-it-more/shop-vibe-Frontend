@@ -70,8 +70,8 @@ const OrderList = () => {
                             <div key={order._id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-md transition-shadow">
                                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-gray-50 dark:border-slate-700 pb-4 mb-4">
                                     <div>
-                                        <p className="text-sm text-gray-400 font-medium">Order ID</p>
-                                        <p className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300">#{order._id}</p>
+                                        <p className="text-sm text-gray-400 font-medium">{order.invoiceNumber ? 'Invoice' : 'Order ID'}</p>
+                                        <p className="font-mono text-sm font-bold text-slate-700 dark:text-slate-300">#{order.invoiceNumber || order._id}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-400 font-medium">Date</p>

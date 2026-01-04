@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import api from '../services/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { User, Mail, Phone, Package, AlertCircle, Clock, CheckCircle, XCircle, X, Plus, Image, Video, Trash2, UploadCloud, MapPin, ChevronDown, ChevronUp, Camera, Edit2, Save } from 'lucide-react';
+import { User, Mail, Phone, Package, AlertCircle, Clock, CheckCircle, XCircle, X, Plus, Image, Video, Trash2, UploadCloud, MapPin, ChevronDown, ChevronUp, Camera, Edit2, Save, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Profile = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+    const { showToast } = useToast();
+    const { confirm } = useConfirm();
     const [complaints, setComplaints] = useState([]);
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -22,7 +26,7 @@ const Profile = () => {
     const [imagePreviews, setImagePreviews] = useState([]);
     const [expandedComplaintId, setExpandedComplaintId] = useState(null);
     const [isEditingAddress, setIsEditingAddress] = useState(false);
-    const [tempAddress, setTempAddress] = useState('');
+    const [tempAddress, setTempAddress] = useState({});
     const [isEditingName, setIsEditingName] = useState(false);
     const [tempName, setTempName] = useState('');
     const [showPhotoOptions, setShowPhotoOptions] = useState(false);
@@ -30,7 +34,12 @@ const Profile = () => {
 
     useEffect(() => {
         if (user) {
-            setTempAddress(user.address || '');
+            // Handle both legacy string and new object address
+            if (typeof user.address === 'string') {
+                setTempAddress({ street: user.address });
+            } else {
+                setTempAddress(user.address || {});
+            }
             setTempName(user.name || '');
         }
     }, [user]);
@@ -51,21 +60,41 @@ const Profile = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setUserData(data); // key: update context
-            // alert('Profile photo updated!');
+            showToast('Profile photo updated!', 'success');
         } catch (error) {
             console.error("Failed to update profile photo", error);
-            alert("Failed to update profile photo");
+            showToast("Failed to update profile photo", "error");
         }
     };
 
     const handleDeleteProfilePhoto = async () => {
-        if (!window.confirm("Are you sure you want to remove your profile photo?")) return;
+        const isConfirmed = await confirm('Remove Photo', "Are you sure you want to remove your profile photo?");
+        if (!isConfirmed) return;
         try {
             const { data } = await api.delete('/users/profile-photo');
             setUserData(data);
+            showToast("Profile photo removed!", "success");
         } catch (error) {
             console.error("Failed to remove profile photo", error);
-            alert("Failed to remove profile photo");
+            showToast("Failed to remove profile photo", "error");
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        const isConfirmed = await confirm('Delete Account', "Are you sure you want to permanently delete your account? This action cannot be undone.");
+        if (isConfirmed) {
+            try {
+                await api.delete('/users/profile');
+                showToast("Account deleted successfully", "success");
+
+                // Perform cleanup
+                localStorage.removeItem('token');
+                sessionStorage.removeItem('token');
+                window.location.href = '/login';
+            } catch (error) {
+                console.error("Failed to delete account", error);
+                showToast(error.response?.data?.message || 'Failed to delete account', 'error');
+            }
         }
     };
 
@@ -74,9 +103,10 @@ const Profile = () => {
             const { data } = await api.put('/users/profile', { address: tempAddress });
             setUserData(data);
             setIsEditingAddress(false);
+            showToast("Address updated!", "success");
         } catch (error) {
             console.error("Failed to update address", error);
-            alert("Failed to update address");
+            showToast("Failed to update address", "error");
         }
     };
 
@@ -85,9 +115,10 @@ const Profile = () => {
             const { data } = await api.put('/users/profile', { name: tempName });
             setUserData(data);
             setIsEditingName(false);
+            showToast("Name updated!", "success");
         } catch (error) {
             console.error("Failed to update name", error);
-            alert("Failed to update name");
+            showToast("Failed to update name", "error");
         }
     };
 
@@ -180,7 +211,7 @@ const Profile = () => {
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         if (files.length + selectedImages.length > 4) {
-            alert("You can only upload up to 4 images");
+            showToast("You can only upload up to 4 images", "error");
             return;
         }
         setSelectedImages(prev => [...prev, ...files]);
@@ -308,46 +339,156 @@ const Profile = () => {
                                     </button>
                                 </div>
                             )}
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{user?.email}</p>
+                            <div className="mb-6 flex flex-col gap-1 items-center">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
+                                {user?.phoneNumber && <p className="text-sm text-gray-500 dark:text-gray-400">{user.phoneNumber}</p>}
+                            </div>
 
                             <div className="space-y-3 text-left">
                                 {isEditingAddress ? (
-                                    <div className="bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <MapPin className="h-4 w-4 text-indigo-500" />
-                                            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">Edit Address</span>
+                                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900 shadow-sm">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <MapPin className="h-4 w-4 text-indigo-500" />
+                                                <span className="text-sm font-bold text-slate-900 dark:text-white">Edit Address</span>
+                                            </div>
                                         </div>
-                                        <textarea
-                                            value={tempAddress}
-                                            onChange={(e) => setTempAddress(e.target.value)}
-                                            className="w-full text-sm p-2 rounded border border-gray-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white mb-2 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                            rows="2"
-                                            placeholder="Enter your address..."
-                                        />
-                                        <div className="flex gap-2 justify-end">
-                                            <button onClick={() => setIsEditingAddress(false)} className="p-1 text-gray-400 hover:text-gray-600">
-                                                <X className="h-4 w-4" />
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Address Line 1</label>
+                                                <input
+                                                    type="text"
+                                                    value={tempAddress.street || (typeof tempAddress === 'string' ? tempAddress : '')}
+                                                    onChange={(e) => setTempAddress({ ...tempAddress, street: e.target.value })}
+                                                    placeholder="Street Address"
+                                                    className="w-full text-sm p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border-none ring-1 ring-gray-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Address Line 2 (Optional)</label>
+                                                <input
+                                                    type="text"
+                                                    value={tempAddress.addressLine2 || ''} // Using 'addressLine2' to distinguish
+                                                    onChange={(e) => setTempAddress({ ...tempAddress, addressLine2: e.target.value })}
+                                                    placeholder="Apartment, suite, etc."
+                                                    className="w-full text-sm p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border-none ring-1 ring-gray-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">City</label>
+                                                    <input
+                                                        type="text"
+                                                        value={tempAddress.city || ''}
+                                                        onChange={(e) => setTempAddress({ ...tempAddress, city: e.target.value })}
+                                                        placeholder="City"
+                                                        className="w-full text-sm p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border-none ring-1 ring-gray-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">State</label>
+                                                    <input
+                                                        type="text"
+                                                        value={tempAddress.state || ''}
+                                                        onChange={(e) => setTempAddress({ ...tempAddress, state: e.target.value })}
+                                                        placeholder="State"
+                                                        className="w-full text-sm p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border-none ring-1 ring-gray-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Postal Code</label>
+                                                    <input
+                                                        type="text"
+                                                        value={tempAddress.postalCode || ''}
+                                                        onChange={(e) => setTempAddress({ ...tempAddress, postalCode: e.target.value })}
+                                                        placeholder="Postal Code"
+                                                        className="w-full text-sm p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border-none ring-1 ring-gray-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Country</label>
+                                                    <input
+                                                        type="text"
+                                                        value={tempAddress.country || ''}
+                                                        onChange={(e) => setTempAddress({ ...tempAddress, country: e.target.value })}
+                                                        placeholder="Country"
+                                                        className="w-full text-sm p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border-none ring-1 ring-gray-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
+                                                    />
+                                                </div>
+                                            </div>
+                                            {/* Phone Number Field integrated into Address Form */}
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Phone Number</label>
+                                                <input
+                                                    type="tel"
+                                                    value={tempAddress.phoneNumber || ''}
+                                                    onChange={(e) => setTempAddress({ ...tempAddress, phoneNumber: e.target.value })}
+                                                    placeholder="Phone Number"
+                                                    className="w-full text-sm p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border-none ring-1 ring-gray-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-3 justify-end mt-3">
+                                            <button
+                                                onClick={() => setIsEditingAddress(false)}
+                                                className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                            >
+                                                Cancel
                                             </button>
-                                            <button onClick={handleAddressUpdate} className="p-1 text-green-600 hover:text-green-700">
-                                                <Save className="h-4 w-4" />
+                                            <button
+                                                onClick={handleAddressUpdate}
+                                                className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
+                                            >
+                                                <Save className="h-3 w-3" />
+                                                Save Address
                                             </button>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg group">
-                                        <div className="flex items-center gap-3 overflow-hidden">
-                                            <MapPin className="h-4 w-4 flex-shrink-0" />
-                                            <span className="truncate">{user?.address || 'No address set'}</span>
+                                        <div className="flex items-start gap-3 overflow-hidden">
+                                            <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                                            <div className="flex flex-col gap-0.5">
+                                                {user?.address && typeof user.address === 'object' && (user.address.street || user.address.city) ? (
+                                                    <>
+                                                        <span className="font-medium text-slate-900 dark:text-white">{user.address.street}</span>
+                                                        {user.address.addressLine2 && <span className="text-gray-500 dark:text-gray-400">{user.address.addressLine2}</span>}
+                                                        <span>{user.address.city}, {user.address.state} {user.address.postalCode}</span>
+                                                        <span>{user.address.country}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="truncate">{typeof user?.address === 'string' ? user.address : 'No address set'}</span>
+                                                )}
+                                                <div className="flex items-center gap-2 mt-1 pt-1 border-t border-gray-200 dark:border-slate-600">
+                                                    <Phone className="h-3 w-3" />
+                                                    <span>{user.address?.phoneNumber || 'No shipping phone added'}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <button onClick={() => setIsEditingAddress(true)} className="text-gray-400 hover:text-indigo-600 transition-colors">
+                                        <button onClick={() => setIsEditingAddress(true)} className="text-gray-400 hover:text-indigo-600 transition-colors self-start">
                                             <Edit2 className="h-4 w-4" />
                                         </button>
                                     </div>
                                 )}
-                                <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg">
-                                    <Phone className="h-4 w-4" />
-                                    <span>{user?.phoneNumber || 'No phone added'}</span>
-                                </div>
+                            </div>
+
+                            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-700 space-y-3">
+                                <button
+                                    onClick={logout}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 dark:text-indigo-400 rounded-xl transition-colors"
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                    Sign Out
+                                </button>
+                                <button
+                                    onClick={handleDeleteAccount}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 rounded-xl transition-colors"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete Account
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -396,7 +537,7 @@ const Profile = () => {
                                                         </span>
                                                     </div>
                                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                        <span className="font-mono text-xs">#{complaint._id.slice(-6)}</span> • Order #{complaint.order?._id.slice(-6) || 'N/A'} • {new Date(complaint.createdAt).toLocaleDateString()}
+                                                        <span className="font-mono text-xs">#{complaint._id.slice(-6).toUpperCase()}</span> • Order #{complaint.order?.invoiceNumber || complaint.order?._id.slice(-6).toUpperCase()} • {new Date(complaint.createdAt).toLocaleDateString()}
                                                     </p>
                                                 </div>
                                                 <div className="text-gray-400 dark:text-gray-500">
@@ -450,135 +591,136 @@ const Profile = () => {
                         </div>
                     </div>
                 </div>
-            </main>
+            </main >
             <Footer />
 
             {/* Complaint Modal */}
-            {showComplaintModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm print:hidden">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-                        <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-700">
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <AlertCircle className="h-5 w-5 text-red-500" /> Raise New Complaint
-                            </h3>
-                            <button onClick={() => setShowComplaintModal(false)} className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
+            {
+                showComplaintModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm print:hidden">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-700">
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <AlertCircle className="h-5 w-5 text-red-500" /> Raise New Complaint
+                                </h3>
+                                <button onClick={() => setShowComplaintModal(false)} className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
 
-                        <div className="p-6">
-                            {message.text && (
-                                <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${message.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                                    {message.text}
-                                </div>
-                            )}
+                            <div className="p-6">
+                                {message.text && (
+                                    <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${message.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                        {message.text}
+                                    </div>
+                                )}
 
-                            <form onSubmit={submitComplaint} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Select Order</label>
-                                    <select
-                                        value={selectedOrderId}
-                                        onChange={(e) => setSelectedOrderId(e.target.value)}
-                                        required
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                    >
-                                        <option value="">-- Choose an Order --</option>
-                                        {orders.map(order => (
-                                            <option key={order._id} value={order._id}>
-                                                Order #{order._id} - {new Date(order.createdAt).toLocaleDateString()} - ₹{order.totalPrice}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Subject</label>
-                                    <select
-                                        value={subject}
-                                        onChange={(e) => setSubject(e.target.value)}
-                                        required
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                    >
-                                        <option value="">Select an issue</option>
-                                        <option value="Damaged Product">Damaged Product</option>
-                                        <option value="Wrong Item Received">Wrong Item Received</option>
-                                        <option value="Product Quality Issue">Product Quality Issue</option>
-                                        <option value="Size/Fit Issue">Size/Fit Issue</option>
-                                        <option value="Delay in Delivery">Delay in Delivery</option>
-                                        <option value="Payment Issue">Payment Issue</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Description</label>
-                                    <textarea
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        required
-                                        rows="4"
-                                        placeholder="Please describe your issue in detail..."
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                    ></textarea>
-                                </div>
+                                <form onSubmit={submitComplaint} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Select Order</label>
+                                        <select
+                                            value={selectedOrderId}
+                                            onChange={(e) => setSelectedOrderId(e.target.value)}
+                                            required
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        >
+                                            <option value="">-- Choose an Order --</option>
+                                            {orders.map(order => (
+                                                <option key={order._id} value={order._id}>
+                                                    {order.invoiceNumber ? `Invoice #${order.invoiceNumber}` : `Order #${order._id.slice(-6).toUpperCase()}`} - {new Date(order.createdAt).toLocaleDateString()} - ₹{order.totalPrice}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Subject</label>
+                                        <select
+                                            value={subject}
+                                            onChange={(e) => setSubject(e.target.value)}
+                                            required
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        >
+                                            <option value="">Select an issue</option>
+                                            <option value="Damaged Product">Damaged Product</option>
+                                            <option value="Wrong Item Received">Wrong Item Received</option>
+                                            <option value="Product Quality Issue">Product Quality Issue</option>
+                                            <option value="Size/Fit Issue">Size/Fit Issue</option>
+                                            <option value="Delay in Delivery">Delay in Delivery</option>
+                                            <option value="Payment Issue">Payment Issue</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Description</label>
+                                        <textarea
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            required
+                                            rows="4"
+                                            placeholder="Please describe your issue in detail..."
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        ></textarea>
+                                    </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Attachments (Optional)</label>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Attachments (Optional)</label>
 
-                                    {/* Images */}
-                                    <div className="mb-4">
-                                        <p className="text-xs text-gray-500 mb-2">Images (Max 4)</p>
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {imagePreviews.map((src, index) => (
-                                                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
-                                                    <img src={src} alt="Preview" className="w-full h-full object-cover" />
-                                                    <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded-full hover:bg-red-600">
-                                                        <X className="h-3 w-3" />
+                                        {/* Images */}
+                                        <div className="mb-4">
+                                            <p className="text-xs text-gray-500 mb-2">Images (Max 4)</p>
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {imagePreviews.map((src, index) => (
+                                                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                                                        <img src={src} alt="Preview" className="w-full h-full object-cover" />
+                                                        <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded-full hover:bg-red-600">
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                {selectedImages.length < 4 && (
+                                                    <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors">
+                                                        <Image className="h-6 w-6 text-gray-400 group-hover:text-indigo-500" />
+                                                        <span className="text-[10px] text-gray-500 mt-1">Add Image</span>
+                                                        <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" />
+                                                    </label>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Video */}
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-2">Video (Max 1)</p>
+                                            {selectedVideo ? (
+                                                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600">
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        <Video className="h-5 w-5 text-indigo-500 flex-shrink-0" />
+                                                        <span className="text-sm truncate text-gray-700 dark:text-gray-200">{selectedVideo.name}</span>
+                                                    </div>
+                                                    <button type="button" onClick={() => setSelectedVideo(null)} className="text-red-500 hover:text-red-600">
+                                                        <Trash2 className="h-4 w-4" />
                                                     </button>
                                                 </div>
-                                            ))}
-                                            {selectedImages.length < 4 && (
-                                                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors">
-                                                    <Image className="h-6 w-6 text-gray-400 group-hover:text-indigo-500" />
-                                                    <span className="text-[10px] text-gray-500 mt-1">Add Image</span>
-                                                    <input type="file" accept="image/*" multiple onChange={handleImageChange} className="hidden" />
+                                            ) : (
+                                                <label className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors">
+                                                    <Video className="h-5 w-5 text-gray-400" />
+                                                    <span className="text-sm text-gray-600 dark:text-gray-400">Upload Video Evidence</span>
+                                                    <input type="file" accept="video/*" onChange={(e) => setSelectedVideo(e.target.files[0])} className="hidden" />
                                                 </label>
                                             )}
                                         </div>
                                     </div>
-
-                                    {/* Video */}
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-2">Video (Max 1)</p>
-                                        {selectedVideo ? (
-                                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600">
-                                                <div className="flex items-center gap-2 overflow-hidden">
-                                                    <Video className="h-5 w-5 text-indigo-500 flex-shrink-0" />
-                                                    <span className="text-sm truncate text-gray-700 dark:text-gray-200">{selectedVideo.name}</span>
-                                                </div>
-                                                <button type="button" onClick={() => setSelectedVideo(null)} className="text-red-500 hover:text-red-600">
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <label className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors">
-                                                <Video className="h-5 w-5 text-gray-400" />
-                                                <span className="text-sm text-gray-600 dark:text-gray-400">Upload Video Evidence</span>
-                                                <input type="file" accept="video/*" onChange={(e) => setSelectedVideo(e.target.files[0])} className="hidden" />
-                                            </label>
-                                        )}
-                                    </div>
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={submitLoading}
-                                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {submitLoading ? 'Submitting...' : 'Submit Complaint'}
-                                </button>
-                            </form>
+                                    <button
+                                        type="submit"
+                                        disabled={submitLoading}
+                                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {submitLoading ? 'Submitting...' : 'Submit Complaint'}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
         </div>
     );
 };

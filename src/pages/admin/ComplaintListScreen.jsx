@@ -77,64 +77,115 @@ const ComplaintListScreen = () => {
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-gray-100 dark:border-slate-700 text-xs uppercase text-gray-500 font-semibold bg-gray-50 dark:bg-slate-900/50">
-                                    <th className="p-4">Complaint ID</th>
-                                    <th className="p-4">User</th>
-                                    <th className="p-4">Order ID</th>
-                                    <th className="p-4">Subject</th>
-                                    <th className="p-4">Date</th>
-                                    <th className="p-4">Status</th>
-                                    <th className="p-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-                                {filteredComplaints.length > 0 ? (
-                                    filteredComplaints.map((complaint) => (
-                                        <tr key={complaint._id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                                            <td className="p-4 font-mono text-sm text-slate-800 dark:text-slate-200">
-                                                #{complaint._id.slice(-6)}
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="text-sm font-medium text-slate-900 dark:text-white">{complaint.user?.name || 'Unknown'}</div>
-                                                <div className="text-xs text-gray-500">{complaint.user?.email}</div>
-                                            </td>
-                                            <td className="p-4 font-mono text-sm text-indigo-600 dark:text-indigo-400">
-                                                {complaint.order?._id}
-                                            </td>
-                                            <td className="p-4 text-sm text-slate-700 dark:text-slate-300 max-w-xs truncate">
-                                                {complaint.subject}
-                                            </td>
-                                            <td className="p-4 text-sm text-gray-500 dark:text-gray-400">
-                                                {new Date(complaint.createdAt).toLocaleDateString()}
-                                            </td>
-                                            <td className="p-4">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusColor(complaint.status)}`}>
-                                                    {complaint.status}
+                    <>
+                        {/* Mobile View - Cards */}
+                        <div className="md:hidden space-y-4">
+                            {filteredComplaints.length > 0 ? (
+                                filteredComplaints.map((complaint) => (
+                                    <div key={complaint._id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm flex flex-col gap-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <span className="font-mono text-xs text-gray-400 flex items-center gap-1">
+                                                    #{complaint._id.slice(-6)}
+                                                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                    {new Date(complaint.createdAt).toLocaleDateString()}
                                                 </span>
-                                            </td>
-                                            <td className="p-4 text-right">
-                                                <Link
-                                                    to={`/admin/complaints/${complaint._id}`}
-                                                    className="inline-flex p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
+                                                <h3 className="font-bold text-slate-800 dark:text-white mt-1 line-clamp-1">{complaint.subject}</h3>
+                                            </div>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusColor(complaint.status)}`}>
+                                                {complaint.status}
+                                            </span>
+                                        </div>
+
+                                        <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2 bg-gray-50 dark:bg-slate-900/50 p-3 rounded-lg">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-400 text-xs uppercase tracking-wider">User</span>
+                                                <div className="text-right">
+                                                    <span className="block font-medium text-slate-900 dark:text-white">{complaint.user?.name || 'Unknown'}</span>
+                                                    <span className="block text-xs text-gray-400">{complaint.user?.email}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-400 text-xs uppercase tracking-wider">Order ID</span>
+                                                <span className="font-mono text-indigo-500">{complaint.order?._id}</span>
+                                            </div>
+                                        </div>
+
+                                        <Link
+                                            to={`/admin/complaints/${complaint._id}`}
+                                            className="flex items-center justify-center gap-2 w-full py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm shadow-sm shadow-indigo-200 dark:shadow-none"
+                                        >
+                                            <Eye className="h-4 w-4" /> View Details
+                                        </Link>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-12 text-gray-500 bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-gray-100 dark:border-slate-700 border-dashed">
+                                    <p>No complaints found matching your criteria.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Desktop View - Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-gray-100 dark:border-slate-700 text-xs uppercase text-gray-500 font-semibold bg-gray-50 dark:bg-slate-900/50">
+                                        <th className="p-4">Complaint ID</th>
+                                        <th className="p-4">User</th>
+                                        <th className="p-4">Order ID</th>
+                                        <th className="p-4">Subject</th>
+                                        <th className="p-4">Date</th>
+                                        <th className="p-4">Status</th>
+                                        <th className="p-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                                    {filteredComplaints.length > 0 ? (
+                                        filteredComplaints.map((complaint) => (
+                                            <tr key={complaint._id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                                                <td className="p-4 font-mono text-sm text-slate-800 dark:text-slate-200">
+                                                    #{complaint._id.slice(-6)}
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="text-sm font-medium text-slate-900 dark:text-white">{complaint.user?.name || 'Unknown'}</div>
+                                                    <div className="text-xs text-gray-500">{complaint.user?.email}</div>
+                                                </td>
+                                                <td className="p-4 font-mono text-sm text-indigo-600 dark:text-indigo-400">
+                                                    {complaint.order?._id}
+                                                </td>
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-300 max-w-xs truncate">
+                                                    {complaint.subject}
+                                                </td>
+                                                <td className="p-4 text-sm text-gray-500 dark:text-gray-400">
+                                                    {new Date(complaint.createdAt).toLocaleDateString()}
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusColor(complaint.status)}`}>
+                                                        {complaint.status}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <Link
+                                                        to={`/admin/complaints/${complaint._id}`}
+                                                        className="inline-flex p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="7" className="p-8 text-center text-gray-500">
+                                                No complaints found matching your criteria.
                                             </td>
                                         </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="7" className="p-8 text-center text-gray-500">
-                                            No complaints found matching your criteria.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

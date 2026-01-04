@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { User, LogOut, Camera, X, Loader, Save, Package, LayoutDashboard } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 
 const ProfileDropdown = () => {
     const { user, logout, setUserData } = useAuth();
+    const { showToast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [newName, setNewName] = useState(user?.name || '');
@@ -50,7 +52,7 @@ const ProfileDropdown = () => {
             setUserData(data); // Update global user state
         } catch (error) {
             console.error("Failed to upload image", error);
-            alert("Failed to upload image");
+            showToast("Failed to upload image", "error");
         } finally {
             setUploading(false);
         }
@@ -68,7 +70,7 @@ const ProfileDropdown = () => {
             setIsEditing(false);
         } catch (error) {
             console.error("Failed to update name", error);
-            alert("Failed to update name");
+            showToast("Failed to update name", "error");
         }
     };
 
@@ -180,14 +182,16 @@ const ProfileDropdown = () => {
                             </div>
 
                             <div className="p-2">
-                                <Link
-                                    to="/orders"
-                                    onClick={() => setIsOpen(false)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                                >
-                                    <Package className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                                    My Orders / Track
-                                </Link>
+                                {user.role !== 'admin' && (
+                                    <Link
+                                        to="/orders"
+                                        onClick={() => setIsOpen(false)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                                    >
+                                        <Package className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                                        My Orders / Track
+                                    </Link>
+                                )}
 
                                 {user.role === 'admin' && (
                                     <Link

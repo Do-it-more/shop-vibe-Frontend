@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
+import { useToast } from './ToastContext';
 
 const WishlistContext = createContext();
 
@@ -8,6 +9,7 @@ export const useWishlist = () => useContext(WishlistContext);
 
 export const WishlistProvider = ({ children }) => {
     const { user } = useAuth();
+    const { showToast } = useToast();
     const [wishlist, setWishlist] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -33,7 +35,7 @@ export const WishlistProvider = ({ children }) => {
 
     const toggleWishlist = async (productId) => {
         if (!user) {
-            alert("Please login to manage wishlist");
+            showToast("Please login to manage wishlist", "error");
             return;
         }
 

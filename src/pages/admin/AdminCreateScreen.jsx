@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { ArrowLeft, Loader, UserPlus, Shield, User, Smartphone, Mail, Lock } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 const AdminCreateScreen = () => {
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -24,10 +26,11 @@ const AdminCreateScreen = () => {
                 phoneNumber,
                 role
             });
+            showToast("User created successfully", "success");
             navigate('/admin/users');
         } catch (error) {
             console.error(error);
-            alert(error.response?.data?.message || "Failed to create user");
+            showToast(error.response?.data?.message || "Failed to create user", "error");
         } finally {
             setLoading(false);
         }
@@ -119,8 +122,8 @@ const AdminCreateScreen = () => {
                                 type="button"
                                 onClick={() => setRole('user')}
                                 className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${role === 'user'
-                                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                                        : 'border-gray-200 dark:border-slate-700 hover:border-indigo-300'
+                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+                                    : 'border-gray-200 dark:border-slate-700 hover:border-indigo-300'
                                     }`}
                             >
                                 <User className="h-5 w-5" />
@@ -130,8 +133,8 @@ const AdminCreateScreen = () => {
                                 type="button"
                                 onClick={() => setRole('admin')}
                                 className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${role === 'admin'
-                                        ? 'border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                                        : 'border-gray-200 dark:border-slate-700 hover:border-purple-300'
+                                    ? 'border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                                    : 'border-gray-200 dark:border-slate-700 hover:border-purple-300'
                                     }`}
                             >
                                 <Shield className="h-5 w-5" />

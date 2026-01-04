@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader, Check, Mail, Smartphone, Lock, User as UserIcon, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
+import { auth } from '../firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
 const FloatingInput = ({ label, type, value, onChange, error, icon: Icon, disabled = false, rightElement = null, maxLength, ...props }) => {
     const [isFocused, setIsFocused] = useState(false);
@@ -85,24 +87,46 @@ const Register = () => {
     const { register } = useAuth();
     const navigate = useNavigate();
 
-    // Initialize Recaptcha
+
+    // Initialize Recaptcha (Robust)
     const setupRecaptcha = () => {
         if (!window.recaptchaVerifier) {
-            import('../firebase').then(({ auth }) => {
-                import('firebase/auth').then(({ RecaptchaVerifier }) => {
-                    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                        'size': 'invisible',
-                        'callback': (response) => {
-                            // reCAPTCHA solved
-                        }
-                    });
-                });
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible',
+                'callback': (response) => {
+                    console.log("Recaptcha solved");
+                },
+                'expired-callback': () => {
+                    console.warn("Recaptcha expired");
+                    if (window.recaptchaVerifier) {
+                        try {
+                            window.recaptchaVerifier.clear();
+                        } catch (e) { }
+                        window.recaptchaVerifier = null;
+                        // setPhoneStatus('idle'); // Optional: Reset status
+                    }
+                }
             });
         }
     };
 
     useEffect(() => {
+        // Clear any existing auth state to ensure a fresh flow
+        auth.signOut().then(() => {
+            console.log("Auth state cleared for fresh verification");
+        }).catch(err => console.error("Error clearing auth:", err));
+
         setupRecaptcha();
+
+        return () => {
+            // Cleanup on unmount
+            if (window.recaptchaVerifier) {
+                try {
+                    window.recaptchaVerifier.clear();
+                } catch (e) { }
+                window.recaptchaVerifier = null;
+            }
+        };
     }, []);
 
     const handleChange = (e, field) => {
@@ -162,33 +186,50 @@ const Register = () => {
         setPhoneError('');
 
         try {
-            const { auth } = await import('../firebase');
-            const { signInWithPhoneNumber } = await import('firebase/auth');
-
-            const phoneNumber = `+91${formData.phone}`; // User requested +91 hardcoded
-            const appVerifier = window.recaptchaVerifier;
-
-            const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-            setConfirmationResult(result);
-            setPhoneStatus('sent');
-        } catch (err) {
-            console.error(err);
-            setPhoneStatus('idle');
-            if (err.code === 'auth/invalid-phone-number') {
-                setPhoneError('Invalid phone number format.');
-            } else if (err.code === 'auth/too-many-requests') {
-                setPhoneError('Too many requests. Please try again later.');
-            } else {
-                setPhoneError('Failed to send SMS. ' + err.message);
+            // Ensure Recaptcha is ready
+            if (!window.recaptchaVerifier) {
+                setupRecaptcha();
             }
 
-            // Allow resetting captcha to try again
+            const appVerifier = window.recaptchaVerifier;
+            // Strict E.164 Format for India
+            const formatPh = `+91${formData.phone}`;
+
+            console.log("Sending SMS to:", formatPh);
+            const confirmation = await signInWithPhoneNumber(auth, formatPh, appVerifier);
+
+            // If successful, we have a confirmation object
+            setConfirmationResult(confirmation);
+            setPhoneStatus('sent');
+            console.log("SMS Sent Successfully");
+
+        } catch (err) {
+            console.error("Firebase SMS Error:", err);
+            setPhoneStatus('idle');
+
+            // Friendly error messages
+            let msg = err.message;
+            if (msg.includes('auth/billing-not-enabled')) {
+                msg = 'SMS Limit Reached. Upgrade Firebase plan to Blaze to send more.';
+            } else if (msg.includes('auth/too-many-requests')) {
+                msg = 'Too many requests. Please try again later.';
+            } else if (msg.includes('auth/invalid-phone-number')) {
+                msg = 'Invalid phone number format.';
+            }
+
+            setPhoneError(msg || 'Failed to send SMS');
+
+            // Force reset Recaptcha on error so user can try again
             if (window.recaptchaVerifier) {
                 try {
+                    window.recaptchaVerifier.render().then(widgetId => {
+                        grecaptcha.reset(widgetId);
+                    });
+                } catch (e) {
+                    // If render fails, just clear it to be safe
                     window.recaptchaVerifier.clear();
-                } catch (e) { }
-                window.recaptchaVerifier = null;
-                setupRecaptcha();
+                    window.recaptchaVerifier = null;
+                }
             }
         }
     };
@@ -197,24 +238,25 @@ const Register = () => {
         if (!phoneOtp) return;
         setPhoneStatus('verifying');
 
-        if (!confirmationResult) {
-            setPhoneError('Session expired. Please request OTP again.');
-            setPhoneStatus('idle');
-            return;
-        }
-
         try {
+            if (!confirmationResult) {
+                throw new Error("No verification initiated");
+            }
+
+            // Real Firebase Verification
             const result = await confirmationResult.confirm(phoneOtp);
             const user = result.user;
-            const idToken = await user.getIdToken();
-            console.log("Firebase Verified, Token:", idToken);
 
-            setPhoneVerificationToken(idToken);
+            // Get ID Token
+            const token = await user.getIdToken(true); // Force refresh
+
+            console.log("Firebase Verified, ID Token generated");
+            setPhoneVerificationToken(token);
             setPhoneStatus('verified');
         } catch (err) {
             setPhoneStatus('sent');
-            setPhoneError('Invalid OTP or verification failed');
-            console.error(err);
+            setPhoneError('Invalid Verification Code'); // Simple message for user
+            console.error("OTP Confirmation Error:", err);
         }
     };
 

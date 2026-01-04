@@ -12,8 +12,10 @@ import {
     Line
 } from 'recharts';
 import { IndianRupee, ShoppingBag, Users, Package, TrendingUp, Download } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 const AdminDashboard = () => {
+    const { showToast } = useToast();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -52,9 +54,10 @@ const AdminDashboard = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
+            showToast(`${type} report downloaded successfully`, "success");
         } catch (error) {
             console.error(`Failed to download ${type} report`, error);
-            alert("Failed to download report. Please try again.");
+            showToast("Failed to download report. Please try again.", "error");
         }
     };
 

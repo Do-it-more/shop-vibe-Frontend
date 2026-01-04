@@ -191,7 +191,7 @@ const Checkout = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Form */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-2 order-2 lg:order-1">
                         <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-8">
                             <div>
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Contact Information</h2>
@@ -200,9 +200,13 @@ const Checkout = () => {
                                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
                                         <input type="email" value={user.email} disabled className="w-full px-4 py-3 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl cursor-not-allowed text-gray-500 dark:text-gray-400" />
                                     </div>
-                                    <div className="space-y-2">
+                                    <div className="md:col-span-2 space-y-2">
                                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
                                         <input type="text" value={user.name} disabled className="w-full px-4 py-3 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl cursor-not-allowed text-gray-500 dark:text-gray-400" />
+                                    </div>
+                                    <div className="md:col-span-2 space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+                                        <input type="text" value={user.phoneNumber || ''} disabled className="w-full px-4 py-3 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl cursor-not-allowed text-gray-500 dark:text-gray-400" />
                                     </div>
                                 </div>
                             </div>
@@ -210,29 +214,119 @@ const Checkout = () => {
                             <div className="h-px bg-gray-100 dark:bg-slate-700"></div>
 
                             <div>
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Shipping Address</h2>
-                                <div className="space-y-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Shipping Address</h2>
+                                    {user?.address && (
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 transition-colors"
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        const addr = user.address;
+                                                        if (typeof addr === 'object' && addr.street) {
+                                                            setForm({
+                                                                ...form,
+                                                                address: addr.street || '',
+                                                                city: addr.city || '',
+                                                                country: addr.state || '', // Using state field for country input based on my previous mapping, wait. previous checkout had country/state ambiguity. 
+                                                                // In checkout form originally: 'country' input had placeholder='State'.
+                                                                // I will stick to mapping state -> country input (which is labeled "State / Province")
+                                                                postalCode: addr.postalCode || '',
+                                                                phoneNumber: user.phoneNumber || ''
+                                                            });
+                                                        } else if (typeof addr === 'string') {
+                                                            setForm({ ...form, address: addr, phoneNumber: user.phoneNumber || '' });
+                                                        }
+                                                    } else {
+                                                        setForm({
+                                                            address: '',
+                                                            city: '',
+                                                            postalCode: '',
+                                                            country: '',
+                                                            phoneNumber: ''
+                                                        });
+                                                    }
+                                                }}
+                                            />
+                                            <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 transition-colors">Use saved address</span>
+                                        </label>
+                                    )}
+                                </div>
+                                <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
-                                        <input required name="address" onChange={handleChange} type="text" className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" />
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address Line 1</label>
+                                        <input
+                                            required
+                                            name="address"
+                                            value={form.address}
+                                            onChange={handleChange}
+                                            type="text"
+                                            placeholder="Street address, P.O. box"
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white"
+                                        />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
-                                        <input required name="phoneNumber" onChange={handleChange} type="tel" placeholder="10-digit mobile number" className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" />
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Address Line 2 <span className="text-gray-400 font-normal">(Optional)</span>
+                                        </label>
+                                        <input
+                                            name="address2"
+                                            value={form.address2 || ''} // Handle potentially undefined
+                                            onChange={handleChange}
+                                            type="text"
+                                            placeholder="Apartment, suite, unit, building, floor, etc."
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white"
+                                        />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">City</label>
-                                            <input required name="city" onChange={handleChange} type="text" className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" />
+                                            <input
+                                                required
+                                                name="city"
+                                                value={form.city}
+                                                onChange={handleChange}
+                                                type="text"
+                                                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white"
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">State / Province</label>
-                                            <input required name="country" onChange={handleChange} placeholder="State" type="text" className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" />
+                                            <input
+                                                required
+                                                name="country" // Mantaining 'country' name for state to map to existing backend/logic if needed, or update if necessary.
+                                                // Wait, previous code mapped 'country' -> 'State' input. I should check backend but for now keeping frontend names consistent with current state.
+                                                value={form.country}
+                                                onChange={handleChange}
+                                                placeholder="State"
+                                                type="text"
+                                                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white"
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Postal Code</label>
-                                            <input required name="postalCode" onChange={handleChange} type="text" className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" />
+                                            <input
+                                                required
+                                                name="postalCode"
+                                                value={form.postalCode}
+                                                onChange={handleChange}
+                                                type="text"
+                                                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white"
+                                            />
                                         </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+                                        <input
+                                            required
+                                            name="phoneNumber"
+                                            value={form.phoneNumber}
+                                            onChange={handleChange}
+                                            type="tel"
+                                            placeholder="10-digit mobile number"
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white"
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -246,6 +340,9 @@ const Checkout = () => {
                                         cart={cart}
                                         user={user}
                                         total={finalTotal}
+                                        itemsPrice={total - discount}
+                                        taxPrice={tax}
+                                        shippingPrice={shipping}
                                         shippingAddress={form}
                                         clearCart={clearCart}
                                         onDisplaySuccess={() => setIsOrderPlaced(true)}
@@ -256,7 +353,7 @@ const Checkout = () => {
                     </div>
 
                     {/* Summary Sidebar */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 order-1 lg:order-2">
                         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 sticky top-24 transition-colors">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Order Summary</h2>
 

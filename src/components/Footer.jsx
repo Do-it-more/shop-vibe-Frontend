@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Footer = () => {
+    // State for mobile accordion sections
+    const [openSection, setOpenSection] = useState(null);
+
+    const toggleSection = (section) => {
+        setOpenSection(openSection === section ? null : section);
+    };
+
     return (
-        <footer className="bg-white dark:bg-slate-900 pt-16 pb-8 border-t border-gray-100 dark:border-slate-800 transition-colors duration-300">
+        <footer className="bg-white dark:bg-slate-900 pt-16 pb-24 md:pb-8 border-t border-gray-100 dark:border-slate-800 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-8 md:mb-16">
                     {/* Brand Info */}
                     <div>
                         <Link to="/" className="inline-block mb-6 group">
@@ -22,7 +29,7 @@ const Footer = () => {
                         <p className="text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
                             Discover the latest trends in tech and lifestyle. Quality products, premium service, and fast delivery guaranteed.
                         </p>
-                        <div className="flex space-x-4">
+                        <div className="flex space-x-4 mb-8 md:mb-0">
                             {[Facebook, Twitter, Instagram, Linkedin].map((Icon, index) => (
                                 <a key={index} href="#" className="w-10 h-10 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:text-white dark:hover:text-white transition-all duration-300">
                                     <Icon className="h-5 w-5" />
@@ -32,9 +39,17 @@ const Footer = () => {
                     </div>
 
                     {/* Quick Links */}
-                    <div>
-                        <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Quick Links</h4>
-                        <ul className="space-y-4">
+                    <div className="border-b border-gray-100 dark:border-slate-800 md:border-none pb-4 md:pb-0">
+                        <button
+                            onClick={() => toggleSection('quickLinks')}
+                            className="w-full flex justify-between items-center text-lg font-bold text-slate-900 dark:text-white mb-2 md:mb-6 md:cursor-default"
+                        >
+                            Quick Links
+                            <span className="md:hidden">
+                                {openSection === 'quickLinks' ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                            </span>
+                        </button>
+                        <ul className={`${openSection === 'quickLinks' ? 'block' : 'hidden'} md:block space-y-4`}>
                             {[
                                 { name: 'Home', path: '/' },
                                 { name: 'Shop', path: '/products' },
@@ -42,7 +57,7 @@ const Footer = () => {
                                 { name: 'Contact', path: '#' }
                             ].map((item) => (
                                 <li key={item.name}>
-                                    <Link to={item.path} className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                    <Link to={item.path} className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block py-1">
                                         {item.name}
                                     </Link>
                                 </li>
@@ -51,9 +66,17 @@ const Footer = () => {
                     </div>
 
                     {/* Customer Service */}
-                    <div>
-                        <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Customer Service</h4>
-                        <ul className="space-y-4">
+                    <div className="border-b border-gray-100 dark:border-slate-800 md:border-none pb-4 md:pb-0">
+                        <button
+                            onClick={() => toggleSection('customerService')}
+                            className="w-full flex justify-between items-center text-lg font-bold text-slate-900 dark:text-white mb-2 md:mb-6 md:cursor-default"
+                        >
+                            Customer Service
+                            <span className="md:hidden">
+                                {openSection === 'customerService' ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                            </span>
+                        </button>
+                        <ul className={`${openSection === 'customerService' ? 'block' : 'hidden'} md:block space-y-4`}>
                             {[
                                 { name: 'Order Tracking', path: '/orders' },
                                 { name: 'Wishlist', path: '/wishlist' },
@@ -62,7 +85,7 @@ const Footer = () => {
                                 { name: 'Returns', path: '#' }
                             ].map((item) => (
                                 <li key={item.name}>
-                                    <Link to={item.path} className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                    <Link to={item.path} className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors block py-1">
                                         {item.name}
                                     </Link>
                                 </li>
@@ -72,7 +95,7 @@ const Footer = () => {
 
                     {/* Contact Info */}
                     <div>
-                        <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Contact Us</h4>
+                        <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-6 mt-4 md:mt-0">Contact Us</h4>
                         <ul className="space-y-4">
                             <li className="flex items-start gap-4 text-gray-500 dark:text-gray-400">
                                 <MapPin className="h-6 w-6 text-indigo-600 dark:text-indigo-400 shrink-0" />
@@ -90,7 +113,7 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <div className="border-t border-gray-100 dark:border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="border-t border-gray-100 dark:border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
                         © {new Date().getFullYear()} Barlina Fashion Design. All rights reserved.
                     </p>

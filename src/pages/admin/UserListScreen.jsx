@@ -2,8 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { Trash2, Shield, User, ShieldCheck, Plus } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const UserListScreen = () => {
+    const { showToast } = useToast();
+    const { confirm } = useConfirm();
     const [users, setUsers] = useState([]);
 
     useEffect(() => {
@@ -15,12 +19,14 @@ const UserListScreen = () => {
     }, []);
 
     const deleteHandler = async (id) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
+        const isConfirmed = await confirm('Delete User', 'Are you sure you want to delete this user?');
+        if (isConfirmed) {
             try {
                 await api.delete(`/users/${id}`);
                 setUsers(users.filter(user => user._id !== id));
+                showToast("User deleted successfully", "success");
             } catch (error) {
-                alert('Failed to delete user');
+                showToast('Failed to delete user', 'error');
             }
         }
     };
@@ -29,14 +35,16 @@ const UserListScreen = () => {
         const newRole = user.role === 'admin' ? 'user' : 'admin';
         const action = newRole === 'admin' ? 'promote to Admin' : 'remove Admin privileges from';
 
-        if (window.confirm(`Are you sure you want to ${action} ${user.name}?`)) {
+        const isConfirmed = await confirm('Update User Role', `Are you sure you want to ${action} ${user.name}?`);
+        if (isConfirmed) {
             try {
                 const { data } = await api.put(`/users/${user._id}`, { role: newRole });
                 // Optimistically update or use response data
                 setUsers(users.map(u => u._id === user._id ? { ...u, role: data.role } : u));
+                showToast(`User ${user.name} role updated to ${data.role}`, "success");
             } catch (error) {
                 console.error(error);
-                alert('Failed to update user role');
+                showToast('Failed to update user role', 'error');
             }
         }
     };

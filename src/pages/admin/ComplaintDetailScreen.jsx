@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { ArrowLeft, Save, AlertCircle, MessageSquare, CheckCircle, Video, Image as ImageIcon } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 const ComplaintDetailScreen = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [complaint, setComplaint] = useState(null);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState('');
@@ -35,10 +37,10 @@ const ComplaintDetailScreen = () => {
                 status,
                 adminResponse
             });
-            alert("Complaint updated successfully!");
+            showToast("Complaint updated successfully!", "success");
             // Refresh logic if needed or stay on page
         } catch (error) {
-            alert("Failed to update complaint");
+            showToast("Failed to update complaint", "error");
             console.error(error);
         } finally {
             setUpdateLoading(false);
@@ -151,7 +153,7 @@ const ComplaintDetailScreen = () => {
                             <div>
                                 <label className="text-xs text-gray-500">Related Order</label>
                                 <p className="font-mono text-sm text-indigo-600 hover:underline cursor-pointer" onClick={() => navigate(`/admin/orders`)}>
-                                    {complaint.order?._id}
+                                    {complaint.order?.invoiceNumber || complaint.order?._id?.slice(-6).toUpperCase()}
                                 </p>
                             </div>
                         </div>
