@@ -44,7 +44,7 @@ const Navbar = () => {
                         <span className="font-serif text-2xl md:text-3xl tracking-[0.15em] font-bold text-slate-900 dark:text-white leading-none group-hover:opacity-80 transition-opacity" style={{ fontFamily: '"Playfair Display", serif' }}>
                             BARLINA
                         </span>
-                        <span className="text-[8px] md:text-xs tracking-[0.4em] font-light lowercase text-gray-500 dark:text-gray-400 mt-1 hidden md:block">
+                        <span className="text-[10px] md:text-xs tracking-[0.4em] font-light lowercase text-gray-500 dark:text-gray-400 mt-1 block">
                             fashion design
                         </span>
                     </Link>
@@ -107,6 +107,9 @@ const Navbar = () => {
 
                     {/* Mobile Header Icons (Wishlist & Cart & Profile) */}
                     <div className="md:hidden flex items-center gap-3">
+                        <button onClick={toggleTheme} className="text-slate-900 dark:text-white">
+                            {theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
+                        </button>
                         {user && (
                             <>
                                 <Link to="/wishlist" className="text-slate-900 dark:text-white">

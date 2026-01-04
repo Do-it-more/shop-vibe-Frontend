@@ -128,7 +128,9 @@ const OrderListScreen = () => {
                                         )}
                                     </td>
                                     <td className="p-4">
-                                        {order.isDelivered ? (
+                                        {order.isCancelled ? (
+                                            <span className="text-red-600 font-bold text-sm bg-red-50 dark:bg-red-900/10 px-2 py-1 rounded">Cancelled</span>
+                                        ) : order.isDelivered ? (
                                             <span className="text-green-600 font-bold text-sm">Delivered</span>
                                         ) : (
                                             <button
@@ -179,7 +181,9 @@ const OrderListScreen = () => {
                                 </span>
                             )}
 
-                            {order.isDelivered ? (
+                            {order.isCancelled ? (
+                                <span className="text-red-600 dark:text-red-400 font-bold text-xs bg-red-50 dark:bg-red-900/10 px-2 py-1 rounded">Cancelled</span>
+                            ) : order.isDelivered ? (
                                 <span className="text-green-600 dark:text-green-400 font-bold text-xs bg-green-50 dark:bg-green-900/10 px-2 py-1 rounded">Delivered</span>
                             ) : (
                                 <span className="text-yellow-600 dark:text-yellow-400 font-bold text-xs bg-yellow-50 dark:bg-yellow-900/10 px-2 py-1 rounded">Processing</span>
@@ -190,7 +194,7 @@ const OrderListScreen = () => {
                             <Link to={`/order/${order._id}`} className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-white font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
                                 <Eye className="h-4 w-4" /> View
                             </Link>
-                            {!order.isDelivered && (
+                            {!order.isDelivered && !order.isCancelled && (
                                 <button
                                     onClick={() => markAsDelivered(order._id)}
                                     className="flex-1 flex items-center justify-center gap-2 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"

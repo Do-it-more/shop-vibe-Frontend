@@ -69,7 +69,7 @@ const ChatBot = () => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsOpen(true)}
-                className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-2xl transition-all duration-300 ${isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
+                className={`fixed bottom-24 md:bottom-6 right-6 z-50 p-4 rounded-full shadow-2xl transition-all duration-300 ${isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
                     } bg-gradient-to-r from-indigo-600 to-purple-600 text-white`}
             >
                 <div className="absolute inset-0 bg-white opacity-20 rounded-full animate-ping"></div>
@@ -84,7 +84,7 @@ const ChatBot = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 100, scale: 0.9 }}
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="fixed bottom-6 right-6 z-50 w-full max-w-[380px] h-[600px] max-h-[80vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-700 overflow-hidden"
+                        className="fixed bottom-24 md:bottom-6 right-6 z-50 w-full max-w-[380px] h-[600px] max-h-[80vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-700 overflow-hidden"
                     >
                         {/* Header */}
                         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex items-center justify-between shrink-0">
@@ -162,9 +162,7 @@ const ChatBot = () => {
                                     {loading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                 </button>
                             </form>
-                            <div className="text-center mt-2">
-                                <p className="text-[10px] text-gray-400">Powered by AI Vibe Intelligence</p>
-                            </div>
+
                         </div>
                     </motion.div>
                 )}

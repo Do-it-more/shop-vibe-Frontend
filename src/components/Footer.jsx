@@ -94,9 +94,17 @@ const Footer = () => {
                     </div>
 
                     {/* Contact Info */}
-                    <div>
-                        <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-6 mt-4 md:mt-0">Contact Us</h4>
-                        <ul className="space-y-4">
+                    <div className="border-b border-gray-100 dark:border-slate-800 md:border-none pb-4 md:pb-0">
+                        <button
+                            onClick={() => toggleSection('contactUs')}
+                            className="w-full flex justify-between items-center text-lg font-bold text-slate-900 dark:text-white mb-2 md:mb-6 md:cursor-default"
+                        >
+                            Contact Us
+                            <span className="md:hidden">
+                                {openSection === 'contactUs' ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                            </span>
+                        </button>
+                        <ul className={`${openSection === 'contactUs' ? 'block' : 'hidden'} md:block space-y-4`}>
                             <li className="flex items-start gap-4 text-gray-500 dark:text-gray-400">
                                 <MapPin className="h-6 w-6 text-indigo-600 dark:text-indigo-400 shrink-0" />
                                 <span>13/3, Mukasha parur, villupuram -123463</span>
@@ -117,11 +125,7 @@ const Footer = () => {
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
                         © {new Date().getFullYear()} Barlina Fashion Design. All rights reserved.
                     </p>
-                    <div className="flex items-center gap-6">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all dark:invert" />
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6 opacity-50 grayscale hover:grayscale-0 transition-all dark:invert" />
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-5 opacity-50 grayscale hover:grayscale-0 transition-all dark:invert" />
-                    </div>
+
                 </div>
             </div>
         </footer>
